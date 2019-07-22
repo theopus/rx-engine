@@ -1,0 +1,10 @@
+[package]
+name = "gl"
+version = "0.1.0"
+authors = ["theopus"]
+edition = "2018"
+#build = "build.rs"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+gl_generator = '0.13.0'
