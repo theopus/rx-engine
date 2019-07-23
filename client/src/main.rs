@@ -1,12 +1,7 @@
-extern crate gl;
-extern crate glfw;
-extern crate specs;
+extern crate rx_engine;
 
-mod platform;
-mod render;
-
-use platform::{WindowConfig, create_pm};
-use render::{RendererType};
+use rx_engine::platform::{WindowConfig, create_pm};
+use rx_engine::render::{RendererType};
 
 
 fn main() {

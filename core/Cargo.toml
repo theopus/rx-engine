@@ -1,14 +1,12 @@
 [package]
-name = "rx-engine"
+name = "rx_engine"
 version = "0.1.0"
-authors = ["theopus"]
+authors = ["Oleksandr Tkachov <v-otkachov@expediagroup.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies.specs]
 version = "0.15.0"
 [dependencies.gl]
-path = "gl"
+path = "../gl"
 [dependencies.glfw]
 git = "https://github.com/bjz/glfw-rs.git"
-
