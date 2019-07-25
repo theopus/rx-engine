@@ -9,6 +9,9 @@ use gl::types::{GLenum, GLuint};
 use crate::platform::*;
 use crate::render::*;
 use crate::render::shared_types::Type;
+use crate::open_gl::buffers::OpenGLVertexArray;
+use crate::open_gl::buffers::OpenGLVertexBuffer;
+use crate::open_gl::buffers::OpenGLIndexBuffer;
 
 mod buffers {
     use std::mem;
@@ -227,6 +230,7 @@ mod buffers {
 
             let mut attribute_offset = 0;
             for e in vertex_buffer.get_buffer_layout().elements() {
+                vertex_buffer.bind();
                 unsafe {
                     self.gl.VertexAttribPointer(self.attribute_index,
                                                 i32::from(e.0),
@@ -234,9 +238,9 @@ mod buffers {
                                                 0,
                                                 vertex_buffer.get_buffer_layout().stride() as i32,
                                                 attribute_offset as *const c_void);
+                    self.gl.EnableVertexAttribArray(self.attribute_index);
                 }
                 attribute_offset += e.2;
-                unsafe { self.gl.EnableVertexAttribArray(self.attribute_index); }
                 self.attribute_index += 1;
             }
             self.vertex_buffers.push(vertex_buffer);
@@ -250,11 +254,6 @@ mod buffers {
                 id.bind()
             }
             self.unbind();
-            if let Some(id) = &self.index_buffer {
-                id.unbind()
-            } else {
-                panic!()
-            }
         }
 
         fn get_index_buffer(&self) -> &Box<IndexBuffer> {
@@ -320,6 +319,7 @@ pub struct OpenGLRendererApi<'a> {
 
 impl<'a> OpenGLRendererApi<'a> {
     pub fn new(gl_api: Rc<gl::Gl>, glfw_pm: &'a GlfwPlatformManager) -> OpenGLRendererApi {
+        unsafe { gl_api.Viewport(0, 0, 600, 400); }
         OpenGLRendererApi { gl_api, glfw_pm }
     }
 }
