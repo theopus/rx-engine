@@ -7,7 +7,7 @@ use rx_engine::render::shared_types;
 
 fn main() {
     let platform_manager = create_pm(WindowConfig { width: 600, height: 400 });
-    let (api, constructor) = platform_manager.create_renderer(RendererType::OpenGL);
+    let (mut api, constructor) = platform_manager.create_renderer(RendererType::OpenGL);
 
     let mut vertex_array: Box<VertexArray> = constructor.vertex_array();
     let mut ib = constructor.index_buffer(&[0, 1, 3, 3, 1, 2]);
@@ -33,7 +33,7 @@ fn main() {
     while !platform_manager.should_close() {
         api.clear_color();
         platform_manager.process_events();
-        api.draw_indexed(&vertex_array);
+        api.draw_indexed(vertex_array.as_ref());
         api.swap_buffer();
     }
 }

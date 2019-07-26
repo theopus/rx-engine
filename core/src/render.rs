@@ -7,7 +7,7 @@ pub trait VertexArray: Drop {
     fn bind(&self);
     fn add_vertex_buffer(&mut self, vertex_buffer: Box<VertexBuffer>);
     fn set_index_buffer(&mut self, index_buffer: Box<IndexBuffer>);
-    fn get_index_buffer(&self) -> &Box<IndexBuffer>;
+    fn get_index_buffer(&self) -> &IndexBuffer;
     fn unbind(&self);
 }
 
@@ -91,8 +91,8 @@ pub trait RendererConstructor {
 }
 
 pub trait RendererApi {
-    fn swap_buffer(&self);
-    fn draw_indexed(&self, vertex_array: &Box<VertexArray>);
+    fn swap_buffer(&mut self);
+    fn draw_indexed(&self, vertex_array: &VertexArray);
     fn clear_color(&self);
     fn set_clear_color(&self, r: f32, g: f32, b: f32, a: f32);
 }

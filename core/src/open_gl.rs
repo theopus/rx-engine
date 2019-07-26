@@ -5,6 +5,8 @@ use std::rc::Rc;
 //meta
 use buffers::*;
 use gl::types::{GLenum, GLuint};
+use glfw::RenderContext;
+use glfw::Context;
 
 use crate::platform::*;
 use crate::render::*;
@@ -250,19 +252,12 @@ mod buffers {
         fn set_index_buffer(&mut self, index_buffer: Box<IndexBuffer>) {
             self.bind();
             self.index_buffer = Some(index_buffer);
-            if let Some(id) = &self.index_buffer {
-                id.bind()
-            }
+            self.index_buffer.as_ref().unwrap().bind();
             self.unbind();
         }
 
-        fn get_index_buffer(&self) -> &Box<IndexBuffer> {
-            match &self.index_buffer {
-                Some(id) => {
-                    &id
-                }
-                _ => panic!()
-            }
+        fn get_index_buffer(&self) -> &IndexBuffer {
+            self.index_buffer.as_ref().unwrap().as_ref()
         }
 
         fn unbind(&self) {
@@ -312,24 +307,26 @@ impl RendererConstructor for OpenGLRendererConstructor {
     }
 }
 
-pub struct OpenGLRendererApi<'a> {
+pub struct OpenGLRendererApi {
     gl_api: Rc<gl::Gl>,
-    glfw_pm: &'a GlfwPlatformManager,
+    render_ctx:  RenderContext,
 }
 
-impl<'a> OpenGLRendererApi<'a> {
-    pub fn new(gl_api: Rc<gl::Gl>, glfw_pm: &'a GlfwPlatformManager) -> OpenGLRendererApi {
+impl OpenGLRendererApi {
+    pub fn new(gl_api: Rc<gl::Gl>, render_ctx: RenderContext) -> OpenGLRendererApi {
         unsafe { gl_api.Viewport(0, 0, 600, 400); }
-        OpenGLRendererApi { gl_api, glfw_pm }
+        OpenGLRendererApi { gl_api, render_ctx }
     }
 }
 
-impl<'a> RendererApi for OpenGLRendererApi<'a> {
-    fn swap_buffer(&self) {
-        self.glfw_pm.swap_buffers()
+impl RendererApi for OpenGLRendererApi {
+
+    fn swap_buffer(&mut self) {
+        self.render_ctx.swap_buffers()
     }
 
-    fn draw_indexed(&self, vertex_array: &Box<VertexArray>) {
+
+    fn draw_indexed(&self, vertex_array: &VertexArray) {
         vertex_array.bind();
         unsafe {
             self.gl_api.DrawElements(gl::TRIANGLES,

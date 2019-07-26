@@ -19,7 +19,7 @@ pub struct WindowConfig {
 }
 
 pub trait PlatformManager {
-    fn create_renderer<'a>(&'a self, renderer_type: RendererType) -> (Box<RendererApi + 'a>, Box<RendererConstructor + 'a>);
+    fn create_renderer(& self, renderer_type: RendererType) -> (Box<RendererApi>, Box<RendererConstructor>);
     fn should_close(&self) -> bool;
     fn process_events(&self);
     fn current_time(&self) -> f64;
@@ -65,15 +65,15 @@ impl GlfwPlatformManager {
 }
 
 impl PlatformManager for GlfwPlatformManager {
-    fn create_renderer<'a>(&'a self, renderer_type: RendererType)
-                           -> (Box<RendererApi + 'a>, Box<RendererConstructor + 'a>) {
+    fn create_renderer(&self, renderer_type: RendererType)
+                           -> (Box<RendererApi>, Box<RendererConstructor>) {
         match renderer_type {
             RendererType::OpenGL => {
                 let gl = gl::Gl::load_with(|s| {
                     self.window.borrow_mut().get_proc_address(s) as *const std::os::raw::c_void
                 });
                 let gl = Rc::from(gl);
-                (Box::from(OpenGLRendererApi::new(gl.clone(), self)), Box::from(OpenGLRendererConstructor::new(gl.clone())))
+                (Box::from(OpenGLRendererApi::new(gl.clone(), self.window.borrow_mut().render_context())), Box::from(OpenGLRendererConstructor::new(gl.clone())))
             }
             _ => panic!("Not implemented for {:?} renderer type", renderer_type)
         }
