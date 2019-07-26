@@ -86,6 +86,7 @@ impl RendererApi for OpenGLRendererApi {
                                      gl::UNSIGNED_INT,
                                      std::ptr::null())
         }
+        //TODO: Unbinding
         vertex_array.unbind();
     }
 

@@ -85,6 +85,7 @@ impl MutLayer for TestLayer {
 
         self.shader.bind();
         renderer_api.draw_indexed(self.vertex_array.as_ref());
+        //TODO: Unbinding
         self.shader.unbind();
 
         renderer_api.swap_buffer();
