@@ -19,7 +19,7 @@ pub struct WindowConfig {
 }
 
 pub trait PlatformManager {
-    fn create_renderer(& self, renderer_type: RendererType) -> (Box<RendererApi>, Box<RendererConstructor>);
+    fn create_renderer(&self, renderer_type: RendererType) -> (Box<RendererApi>, Box<RendererConstructor>);
     fn should_close(&self) -> bool;
     fn process_events(&self);
     fn current_time(&self) -> f64;
@@ -66,7 +66,7 @@ impl GlfwPlatformManager {
 
 impl PlatformManager for GlfwPlatformManager {
     fn create_renderer(&self, renderer_type: RendererType)
-                           -> (Box<RendererApi>, Box<RendererConstructor>) {
+                       -> (Box<RendererApi>, Box<RendererConstructor>) {
         match renderer_type {
             RendererType::OpenGL => {
                 let gl = gl::Gl::load_with(|s| {

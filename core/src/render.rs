@@ -31,6 +31,32 @@ pub struct BufferLayout {
     elements: Vec<shared_types::TypeInfo>
 }
 
+pub trait Shader {
+    fn bind(&self);
+    fn unbind(&self);
+}
+
+pub trait RendererConstructor {
+    fn vertex_array(&self) -> Box<VertexArray>;
+    fn vertex_buffer(&self) -> Box<VertexBuffer>;
+    fn index_buffer(&self, indexes: &[u32]) -> Box<IndexBuffer>;
+    fn shader(&self, vertex_src: &str, fragment_src: &str, mem_layout: &BufferLayout) -> Box<Shader>;
+}
+
+pub trait RendererApi {
+    fn swap_buffer(&mut self);
+    fn draw_indexed(&self, vertex_array: &VertexArray);
+    fn clear_color(&self);
+    fn set_clear_color(&self, r: f32, g: f32, b: f32, a: f32);
+}
+
+#[derive(Debug)]
+pub enum RendererType {
+    None,
+    OpenGL,
+    Vulkan,
+}
+
 impl BufferLayout {
     pub fn with(element: shared_types::TypeInfo) -> Self {
         let mut layout = BufferLayout { elements: Vec::new() };
@@ -76,30 +102,4 @@ pub mod shared_types {
     pub const INT: TypeInfo = TypeInfo(1, size_of::<u32>(), 1 * size_of::<f32>() as u64, Type::Int);
     pub const INT_2: TypeInfo = TypeInfo(2, size_of::<u32>(), 2 * size_of::<f32>() as u64, Type::Int2);
     pub const INT_3: TypeInfo = TypeInfo(3, size_of::<u32>(), 3 * size_of::<f32>() as u64, Type::Int3);
-}
-
-pub trait Shader {
-    fn bind(&self);
-    fn unbind(&self);
-}
-
-pub trait RendererConstructor {
-    fn vertex_array(&self) -> Box<VertexArray>;
-    fn vertex_buffer(&self) -> Box<VertexBuffer>;
-    fn index_buffer(&self, indexes: &[u32]) -> Box<IndexBuffer>;
-    fn shader(&self) -> Box<Shader>;
-}
-
-pub trait RendererApi {
-    fn swap_buffer(&mut self);
-    fn draw_indexed(&self, vertex_array: &VertexArray);
-    fn clear_color(&self);
-    fn set_clear_color(&self, r: f32, g: f32, b: f32, a: f32);
-}
-
-#[derive(Debug)]
-pub enum RendererType {
-    None,
-    OpenGL,
-    Vulkan,
 }

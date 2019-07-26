@@ -1,19 +1,32 @@
 extern crate rx_engine;
 
-use rx_engine::platform::{create_pm, WindowConfig};
-use rx_engine::render::{BufferLayout, RendererType, VertexArray, VertexBuffer};
-use rx_engine::render::shared_types;
-use rx_engine::run::Layer;
-use rx_engine::run::MutLayer;
-use rx_engine::render::RendererApi;
-use rx_engine::platform::PlatformManager;
-use rx_engine::run::MutLayerBuilder;
-use rx_engine::render::RendererConstructor;
-use rx_engine::run::PushLayer;
-
+use rx_engine::{
+    platform::{
+        create_pm,
+        PlatformManager,
+        WindowConfig,
+    },
+    render::{
+        BufferLayout,
+        RendererApi,
+        RendererConstructor,
+        RendererType,
+        Shader,
+        shared_types,
+        VertexArray,
+        VertexBuffer,
+    },
+    run::{
+        Layer,
+        MutLayer,
+        MutLayerBuilder,
+        PushLayer,
+    },
+};
 
 struct TestLayer {
-    vertex_array: Box<VertexArray>
+    vertex_array: Box<VertexArray>,
+    shader: Box<Shader>,
 }
 
 impl TestLayer {
@@ -38,24 +51,50 @@ impl TestLayer {
 
         api.set_clear_color(0.3, 0.3, 0.9, 1_f32);
 
-        TestLayer { vertex_array: vertex_array }
+        let vert_shader = r#"
+            #version 330 core
+            layout (location = 0) in vec3 Position;
+
+            void main() {
+                gl_Position = vec4(Position, 1.0);
+            }
+        "#;
+
+        let frag_shader = r#"
+            #version 330 core
+            out vec4 Color;
+
+            void main(){
+                Color = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+            }
+        "#;
+
+        let shader = constructor.shader(vert_shader,
+                                        frag_shader,
+                                        &BufferLayout::with(shared_types::FLOAT_3));
+
+        TestLayer { vertex_array: vertex_array, shader }
     }
 }
 
 impl MutLayer for TestLayer {
     fn on_update(&self, delta: f64, renderer_api: &mut RendererApi, platform_manager: &mut PlatformManager) {
-
         platform_manager.process_events();
-
-
         renderer_api.clear_color();
         platform_manager.process_events();
+
+        self.shader.bind();
         renderer_api.draw_indexed(self.vertex_array.as_ref());
+        self.shader.unbind();
+
         renderer_api.swap_buffer();
     }
 }
 
 struct TestBuilder;
+
+impl TestBuilder {}
+
 impl MutLayerBuilder for TestBuilder {
     fn create_layer(&mut self, api: &RendererApi, constructor: &RendererConstructor) -> Box<MutLayer> {
         Box::new(TestLayer::new(api, constructor)) as Box<MutLayer>
@@ -64,8 +103,7 @@ impl MutLayerBuilder for TestBuilder {
 
 fn main() {
     let mut engine = rx_engine::run::build_engine(RendererType::OpenGL, WindowConfig { width: 600, height: 400 });
-    engine.push_layer(&mut TestBuilder{} as &mut MutLayerBuilder);
+    engine.push_layer(&mut TestBuilder {} as &mut MutLayerBuilder);
     engine.run();
     println!("Bye!")
-
 }
