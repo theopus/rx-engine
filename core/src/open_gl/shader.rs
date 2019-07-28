@@ -1,10 +1,11 @@
-use std::ffi::CStr;
+use std::cell::RefCell;
 use std::ffi::CString;
 use std::rc::Rc;
+use std::sync::mpsc::Receiver;
 
 use gl::Gl;
 
-use crate::render::Shader;
+use crate::render::{Reloadable, ReloadableShader, Shader};
 
 pub struct OpenGLShader {
     id: u32,
@@ -32,8 +33,9 @@ impl OpenGLShader {
     fn shader_from_src(gl: &Gl, src: &str, kind: gl::types::GLenum) -> Result<u32, String> {
         let shader_id = unsafe { gl.CreateShader(kind) };
         unsafe {
+            let string = CString::new(src).unwrap();
             gl.ShaderSource(shader_id, 1,
-                            &CString::new(src).unwrap().as_ptr(),
+                            &string.as_ptr(),
                             std::ptr::null());
             gl.CompileShader(shader_id);
         };
@@ -96,14 +98,75 @@ impl Shader for OpenGLShader {
         unsafe { self.gl.UseProgram(self.id); }
     }
 
+    fn loadMat4(&self, mtx: na::Matrix4<f32>) {
+        unsafe {
+            let locaiton = self.gl.GetUniformLocation(self.id, to_gl_str("m"));
+            self.gl.UniformMatrix4fv(locaiton, 1, 0,
+                                     &mtx.data.as_slice()[0] as *const f32);
+        }
+    }
+
     fn unbind(&self) {
         unsafe { self.gl.UseProgram(0); }
     }
 }
 
+pub struct ReloadableOpenGLShader {
+    gl: Rc<Gl>,
+    shader: RefCell<Option<Box<Shader>>>,
+    receiver: Receiver<(String, String)>,
+}
+
+impl ReloadableOpenGLShader {
+    pub fn new(receiver: Receiver<(String, String)>, gl: Rc<Gl>) -> Self {
+        ReloadableOpenGLShader { gl, shader: RefCell::new(None), receiver }
+    }
+}
+
+impl ReloadableShader for ReloadableOpenGLShader {}
+
+impl Shader for ReloadableOpenGLShader {
+    fn bind(&self) {
+        self.reload_if_changed();
+        if let Some(s) = self.shader.borrow().as_ref() {
+            s.bind();
+        }
+    }
+
+    fn loadMat4(&self, mtx: na::Matrix4<f32>) {
+        if let Some(s) = self.shader.borrow().as_ref() {
+            s.loadMat4(mtx);
+        }
+    }
+
+    fn unbind(&self) {
+        if let Some(s) = self.shader.borrow().as_ref() {
+            s.unbind();
+        }
+    }
+}
+
+impl Reloadable for ReloadableOpenGLShader {
+    fn reload_if_changed(&self) {
+        if let Ok((vert, frag)) = self.receiver.try_recv() {
+            match OpenGLShader::new_vert_frag(
+                vert.as_str(),
+                frag.as_str(),
+                self.gl.clone()) {
+                Ok(s) => {
+                    self.shader.borrow_mut().replace(s);
+                }
+                Err(s) => { println!("{}", s) }
+            }
+        }
+    }
+}
+
+
 impl Drop for OpenGLShader {
     fn drop(&mut self) {
         unsafe {
+            println!("Dropping shader {}", self.id);
             self.gl.DeleteShader(self.vert_id);
             self.gl.DeleteShader(self.frag_id);
             self.gl.DeleteProgram(self.id);
@@ -118,4 +181,8 @@ fn create_whitespace_cstring_with_len(len: usize) -> CString {
     buffer.extend([b' '].iter().cycle().take(len));
     // convert buffer to CString
     unsafe { CString::from_vec_unchecked(buffer) }
+}
+
+fn to_gl_str(string: &str) -> *const i8 {
+    string.as_ptr() as *const i8
 }

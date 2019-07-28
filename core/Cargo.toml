@@ -4,11 +4,19 @@ version = "0.1.0"
 authors = ["Oleksandr Tkachov <theopus5@gmail.com>"]
 edition = "2018"
 
+[dependencies]
+tobj = "0.1.8"
 [dependencies.specs]
 version = "0.15.0"
+[dependencies.specs-derive]
+version = "0.4.0"
 [dependencies.gl]
 path = "../gl"
 [dependencies.glfw]
 git = "https://github.com/bjz/glfw-rs.git"
 [dependencies.nalgebra]
 version = "0.18.0"
+[dependencies.nalgebra-glm]
+version = "0.4.0"
+[dependencies.imgui]
+version = "0.1.0"

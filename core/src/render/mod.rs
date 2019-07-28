@@ -1,4 +1,5 @@
 use std::slice::Iter;
+use std::sync::mpsc::Receiver;
 
 use crate::render::shared_types::TypeInfo;
 
@@ -33,14 +34,22 @@ pub struct BufferLayout {
 
 pub trait Shader {
     fn bind(&self);
+    fn loadMat4(&self, mtx: na::Matrix4<f32>);
     fn unbind(&self);
 }
+
+pub trait Reloadable {
+    fn reload_if_changed(&self);
+}
+
+pub trait ReloadableShader: Shader + Reloadable {}
 
 pub trait RendererConstructor {
     fn vertex_array(&self) -> Box<VertexArray>;
     fn vertex_buffer(&self) -> Box<VertexBuffer>;
     fn index_buffer(&self, indexes: &[u32]) -> Box<IndexBuffer>;
     fn shader(&self, vertex_src: &str, fragment_src: &str, mem_layout: &BufferLayout) -> Box<Shader>;
+    fn reloadable_shader(&self, vertex_path: &str, fragment_path: &str, mem_layout: &BufferLayout) -> Box<ReloadableShader>;
 }
 
 pub trait RendererApi {

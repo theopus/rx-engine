@@ -1,5 +1,3 @@
-extern crate glfw;
-
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
@@ -8,6 +6,7 @@ use glfw::{Action, Context, Glfw, Key};
 
 use crate::open_gl::*;
 use crate::render::*;
+use crate::utils::ResourceListener;
 
 pub fn create_pm(config: WindowConfig) -> Box<PlatformManager> {
     Box::new(GlfwPlatformManager::new(config)) as Box<PlatformManager>
@@ -29,6 +28,7 @@ pub struct GlfwPlatformManager {
     glfw: RefCell<glfw::Glfw>,
     window: RefCell<glfw::Window>,
     events: Receiver<(f64, glfw::WindowEvent)>,
+    rl: Rc<ResourceListener>,
 }
 
 impl GlfwPlatformManager {
@@ -55,11 +55,17 @@ impl GlfwPlatformManager {
 
         window.set_key_polling(true);
         glfw.make_context_current(Option::from(&window));
+
+        let mut rl = ResourceListener::new();
+        rl.start();
+        let rl = Rc::new(rl);
+        
         window.show();
         GlfwPlatformManager {
             glfw: RefCell::from(glfw),
             window: RefCell::from(window),
             events,
+            rl,
         }
     }
 }
@@ -73,7 +79,11 @@ impl PlatformManager for GlfwPlatformManager {
                     self.window.borrow_mut().get_proc_address(s) as *const std::os::raw::c_void
                 });
                 let gl = Rc::from(gl);
-                (Box::from(OpenGLRendererApi::new(gl.clone(), self.window.borrow_mut().render_context())), Box::from(OpenGLRendererConstructor::new(gl.clone())))
+                (Box::from(OpenGLRendererApi::new(
+                    gl.clone(),
+                    self.window.borrow_mut().render_context())),
+                 Box::from(OpenGLRendererConstructor::new(gl.clone(),
+                                                          self.rl.clone())))
             }
             _ => panic!("Not implemented for {:?} renderer type", renderer_type)
         }
