@@ -22,6 +22,9 @@ pub trait PlatformManager {
     fn should_close(&self) -> bool;
     fn process_events(&self);
     fn current_time(&self) -> f64;
+    fn current_time_ms(&self) -> f64{
+        self.current_time() * 1000f64
+    }
 }
 
 pub struct GlfwPlatformManager {

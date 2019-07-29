@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::slice::Iter;
 use std::sync::mpsc::Receiver;
 
@@ -32,9 +33,85 @@ pub struct BufferLayout {
     elements: Vec<shared_types::TypeInfo>
 }
 
+///Material:
+///     * shader
+///     * possible properties
+///MaterialInstance:
+///     * Material
+///     * Properties Values
+///     - use:
+///         upload_values()
+///
+///
+/// ex: flat color
+///
+/// flat_color_material = Material:
+///                     * flat_color_shader
+///                     * vec4 color
+///
+/// red_color_material = flat_color_material.instance(color = vec3(1,0,0,0))
+///
+/// ec2: textures
+///
+/// textured_material = Material:
+///                    * textured_shader
+///                    * Texture texture
+///
+/// cool_textured_material = textured_material.instance(texture = Texture(cool.png))
+///
+/// ***in the renderer***
+///
+/// mesh major batching
+///
+/// mesh_1 bind:
+///     material_1 bind:
+///         instance_1 bind:
+///             draw one
+///         instance_2 bind:
+///             draw all
+///     material_n bind:
+///         etc...
+/// mesh_2 bind:
+///     etc...
+///
+/// ***or***
+///
+/// material major batching
+///
+/// material_1 bind:
+///     instance_1 bind:
+///         mesh_1 bind
+///         draw call one
+///     instance_2 bind:
+///         mesh_1 bind
+///         instancing
+///         draw call all
+/// material_n bind:
+///     etc...
+///
+/// ***or***
+///
+/// --bullshit--
+/// batching with materials
+///
+/// material_1 bind:
+///    all_instances bind:
+///         mesh_1 bind
+///             instancing
+///             draw call all
+///         mesh_2_bind
+///             instancing
+///             draw call all
+/// material_n bind:
+///     etc...
+/// --bullshit
+///
+/// per mesh have buffers mesh[nsize]
+/// for instancing
+
 pub trait Shader {
     fn bind(&self);
-    fn loadMat4(&self, mtx: na::Matrix4<f32>);
+    fn load_mat4(&self, mtx: &na::Matrix4<f32>);
     fn unbind(&self);
 }
 
@@ -49,7 +126,7 @@ pub trait RendererConstructor {
     fn vertex_buffer(&self) -> Box<VertexBuffer>;
     fn index_buffer(&self, indexes: &[u32]) -> Box<IndexBuffer>;
     fn shader(&self, vertex_src: &str, fragment_src: &str, mem_layout: &BufferLayout) -> Box<Shader>;
-    fn reloadable_shader(&self, vertex_path: &str, fragment_path: &str, mem_layout: &BufferLayout) -> Box<ReloadableShader>;
+    fn reloadable_shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> Box<Shader>;
 }
 
 pub trait RendererApi {
@@ -57,6 +134,35 @@ pub trait RendererApi {
     fn draw_indexed(&self, vertex_array: &VertexArray);
     fn clear_color(&self);
     fn set_clear_color(&self, r: f32, g: f32, b: f32, a: f32);
+}
+
+pub struct Renderer {
+    api: Box<RendererApi>
+}
+
+impl Renderer {
+    pub fn new(api: Box<RendererApi>) -> Self {
+        Renderer { api }
+    }
+}
+
+impl Renderer {
+    pub fn submit(&mut self, vertex_array: &VertexArray, shader: &Shader) {
+        shader.bind();
+        self.api.draw_indexed(vertex_array);
+        shader.unbind();
+    }
+
+    pub fn start(&self){
+        self.api.clear_color();
+    }
+    pub fn end(&mut self){
+        self.api.swap_buffer();
+    }
+
+    pub fn api(&self) -> &RendererApi {
+        self.api.as_ref()
+    }
 }
 
 #[derive(Debug)]

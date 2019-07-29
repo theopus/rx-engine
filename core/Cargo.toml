@@ -18,5 +18,6 @@ git = "https://github.com/bjz/glfw-rs.git"
 version = "0.18.0"
 [dependencies.nalgebra-glm]
 version = "0.4.0"
-[dependencies.imgui]
-version = "0.1.0"
+#imgui
+#[dependencies.imgui]
+#version = "0.1.0"

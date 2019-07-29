@@ -1,29 +1,28 @@
-use std::path::Path;
-use std::io::BufRead;
-
-use std::fs::File;
-use std::io::BufReader;
-use tobj::{Mesh, MTLLoadResult};
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::Path;
+
+use tobj::{Mesh, MTLLoadResult};
 
 pub struct LoadResult {
-    positions: Vec<f32>,
-    uvs: Vec<f32>,
-    normals: Vec<f32>,
-    indices: Vec<u32>,
+    pub positions: Vec<f32>,
+    pub uvs: Vec<f32>,
+    pub normals: Vec<f32>,
+    pub indices: Vec<u32>,
 }
 
 pub struct Loader;
 
 
 impl Loader {
-    pub fn load_obj(&mut self, path: &mut Path) -> LoadResult {
-        let a = BufReader::new(File::open(path.to_path_buf()).expect(""), |p| -> MTLLoadResult {
-            Result::Ok((Vec::new(), HashMap::new()))
-        });
-        let (models, materials) =
-            tobj::load_obj_buf(a;
+    pub fn load_obj(&mut self, path: &Path) -> LoadResult {
         println!("File: {}", path.to_str().unwrap());
+        let mut a = BufReader::new(File::open(path.to_path_buf()).expect(""));
+        let (models, materials) = tobj::load_obj_buf(&mut a, |p| -> MTLLoadResult {
+            Result::Ok((Vec::new(), HashMap::new()))
+        }).expect("");
         println!("# of models: {}", models.len());
         println!("# of materials: {}", materials.len());
         if models.len() > 1 {}

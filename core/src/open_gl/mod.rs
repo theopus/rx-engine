@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
 
@@ -7,20 +8,20 @@ use glfw::{
 };
 
 use crate::{
-    utils::ResourceListener,
-    render::ReloadableShader,
+    open_gl::buffer::{OpenGLIndexBuffer, OpenGLVertexArray, OpenGLVertexBuffer},
     open_gl::shader::ReloadableOpenGLShader,
     render::{
-        RendererApi,
+        BufferLayout,
         IndexBuffer,
+        RendererApi,
         RendererConstructor,
         Shader,
         shared_types::Type,
         VertexArray,
         VertexBuffer,
-        BufferLayout,
     },
-    open_gl::buffer::{OpenGLVertexArray, OpenGLVertexBuffer, OpenGLIndexBuffer}
+    render::ReloadableShader,
+    utils::ResourceListener,
 };
 
 use self::{
@@ -58,8 +59,11 @@ impl RendererConstructor for OpenGLRendererConstructor {
         OpenGLShader::new_vert_frag(vertex_src, fragment_src, self.gl_api.clone()).expect("Error during shader creation")
     }
 
-    fn reloadable_shader(&self, path_vert: &str, path_frag: &str, mem_layout: &BufferLayout) -> Box<ReloadableShader> {
-        Box::new(ReloadableOpenGLShader::new(self.rl.listen_pair(path_vert, path_frag), self.gl_api.clone()))
+    fn reloadable_shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> Box<Shader> {
+        Box::new(ReloadableOpenGLShader::new(self.rl.listen_pair(
+            vertex.to_str().unwrap(),
+            fragment.to_str().unwrap(),
+        ), self.gl_api.clone()))
     }
 }
 

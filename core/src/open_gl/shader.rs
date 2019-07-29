@@ -6,6 +6,7 @@ use std::sync::mpsc::Receiver;
 use gl::Gl;
 
 use crate::render::{Reloadable, ReloadableShader, Shader};
+use std::ops::Deref;
 
 pub struct OpenGLShader {
     id: u32,
@@ -98,7 +99,7 @@ impl Shader for OpenGLShader {
         unsafe { self.gl.UseProgram(self.id); }
     }
 
-    fn loadMat4(&self, mtx: na::Matrix4<f32>) {
+    fn load_mat4(&self, mtx: &na::Matrix4<f32>) {
         unsafe {
             let locaiton = self.gl.GetUniformLocation(self.id, to_gl_str("m"));
             self.gl.UniformMatrix4fv(locaiton, 1, 0,
@@ -133,9 +134,9 @@ impl Shader for ReloadableOpenGLShader {
         }
     }
 
-    fn loadMat4(&self, mtx: na::Matrix4<f32>) {
+    fn load_mat4(&self, mtx: &na::Matrix4<f32>) {
         if let Some(s) = self.shader.borrow().as_ref() {
-            s.loadMat4(mtx);
+            s.load_mat4(mtx);
         }
     }
 
