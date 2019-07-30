@@ -5,14 +5,16 @@ use std::{
 };
 
 use crate::{
-    open_gl::to_gl_type,
-    render::{
+    backend_interface::{
         BufferLayout,
         IndexBuffer,
         VertexArray,
         VertexBuffer,
     },
 };
+use crate::Backend;
+use backend_interface::shared_types::Type;
+use backend_interface::Backend as InterfaceBackend;
 
 pub struct GLBuffer {
     id: u32,
@@ -100,7 +102,7 @@ impl OpenGLIndexBuffer {
 }
 
 
-impl IndexBuffer for OpenGLIndexBuffer {
+impl IndexBuffer<Backend> for OpenGLIndexBuffer {
     fn bind(&self) {
         self.buffer.bind();
     }
@@ -148,7 +150,7 @@ impl Drop for OpenGLVertexBuffer {
     }
 }
 
-impl VertexBuffer for OpenGLVertexBuffer {
+impl VertexBuffer<Backend> for OpenGLVertexBuffer {
     fn bind(&self) {
         self.buffer.bind()
     }
@@ -183,8 +185,8 @@ pub struct OpenGLVertexArray {
     id: u32,
     attribute_index: u32,
     gl: Rc<gl::Gl>,
-    index_buffer: Option<Box<IndexBuffer>>,
-    vertex_buffers: Vec<Box<VertexBuffer>>,
+    index_buffer: Option<<Backend as InterfaceBackend>::IndexBuffer>,
+    vertex_buffers: Vec<<Backend as InterfaceBackend>::VertexBuffer>,
 }
 
 impl OpenGLVertexArray {
@@ -209,7 +211,7 @@ impl Drop for OpenGLVertexArray {
     }
 }
 
-impl VertexArray for OpenGLVertexArray {
+impl VertexArray<Backend> for OpenGLVertexArray {
     fn id(&self) -> u32 {
         self.id
     }
@@ -218,7 +220,7 @@ impl VertexArray for OpenGLVertexArray {
         unsafe { self.gl.BindVertexArray(self.id) }
     }
 
-    fn add_vertex_buffer(&mut self, vertex_buffer: Box<VertexBuffer>) {
+    fn add_vertex_buffer(&mut self, vertex_buffer: <Backend as InterfaceBackend>::VertexBuffer) {
         self.bind();
 
         let mut attribute_offset = 0;
@@ -240,18 +242,31 @@ impl VertexArray for OpenGLVertexArray {
         self.unbind();
     }
 
-    fn set_index_buffer(&mut self, index_buffer: Box<IndexBuffer>) {
+    fn set_index_buffer(&mut self, index_buffer: <Backend as InterfaceBackend>::IndexBuffer) {
         self.bind();
         self.index_buffer = Some(index_buffer);
         self.index_buffer.as_ref().unwrap().bind();
         self.unbind();
     }
 
-    fn get_index_buffer(&self) -> &IndexBuffer {
-        self.index_buffer.as_ref().unwrap().as_ref()
+    fn get_index_buffer(&self) -> &<Backend as InterfaceBackend>::IndexBuffer {
+        self.index_buffer.as_ref().unwrap()
     }
 
     fn unbind(&self) {
         unsafe { self.gl.BindVertexArray(0) }
+    }
+}
+
+fn to_gl_type(t: &Type) -> gl::types::GLenum {
+    match t {
+        Type::Float => { gl::FLOAT }
+        Type::Float2 => { gl::FLOAT }
+        Type::Float3 => { gl::FLOAT }
+        Type::Float4 => { gl::FLOAT }
+        Type::Mat4 => { gl::FLOAT }
+        Type::Int => { gl::INT }
+        Type::Int2 => { gl::INT }
+        Type::Int3 => { gl::INT }
     }
 }

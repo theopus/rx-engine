@@ -4,24 +4,28 @@ use std::thread;
 use std::time::Duration;
 
 use rx_engine::{
-    loader::Loader,
-    platform::{
-        create_pm,
+    backend::{
+        IndexBuffer,
+        interface::{
+            shared_types,
+            BufferLayout,
+            IndexBuffer as IBI,
+            PlatformManager as PMI,
+            RendererApi as PAI,
+            RendererConstructor as RCI,
+            Shader as SI,
+            VertexArray as VAI,
+            VertexBuffer as VBI,
+        },
         PlatformManager,
-        WindowConfig,
-    },
-    render::{
-        BufferLayout,
-        Reloadable,
-        ReloadableShader,
         RendererApi,
         RendererConstructor,
-        RendererType,
         Shader,
-        shared_types,
         VertexArray,
         VertexBuffer,
     },
+    loader::Loader,
+    render::Renderer,
     run::{
         Layer,
         MutLayer,
@@ -34,7 +38,6 @@ use rx_engine::{
         ResourceListener,
     },
 };
-use rx_engine::render::Renderer;
 
 struct TestLayer {
     vertex_array: Box<VertexArray>,
@@ -48,22 +51,22 @@ impl TestLayer {
         let mut loader = Loader;
         let result = loader.load_obj(path_buf);
 
-        let mut vertex_array: Box<VertexArray> = constructor.vertex_array();
+        let mut vertex_array: Box<VertexArray> = Box::new(constructor.vertex_array());
         let mut ib = constructor.index_buffer(&result.indices);
-        let mut vb: Box<VertexBuffer> = constructor.vertex_buffer();
+        let mut vb: Box<VertexBuffer> = Box::new(constructor.vertex_buffer());
 
         vertex_array.set_index_buffer(ib);
         vb.buffer_data_f32(&result.positions);
         vb.set_buffer_layout(BufferLayout::with(shared_types::FLOAT_3));
-        vertex_array.add_vertex_buffer(vb);
+        vertex_array.add_vertex_buffer(*vb);
 
         renderer.api().set_clear_color(0.3, 0.3, 0.9, 1_f32);
 
 
-        let shader: Box<Shader> = constructor.reloadable_shader(
+        let shader: Box<Shader> = Box::from(constructor.reloadable_shader(
             &relative_to_current_path(&vec!["src", "test", "vert.glsl"]),
             &relative_to_current_path(&vec!["src", "test", "frag.glsl"]),
-            &BufferLayout::with(shared_types::FLOAT_3)) as Box<Shader>;
+            &BufferLayout::with(shared_types::FLOAT_3))) as Box<Shader>;
 
         TestLayer { vertex_array: vertex_array, shader, rot: 0.0 }
     }
@@ -71,8 +74,6 @@ impl TestLayer {
 
 impl MutLayer for TestLayer {
     fn on_update(&mut self, delta: f64, renderer: &mut Renderer, platform_manager: &mut PlatformManager) {
-
-
         use rx_engine::na::Matrix4;
         use rx_engine::glm;
 
@@ -81,7 +82,7 @@ impl MutLayer for TestLayer {
         self.rot += 0.001f32;
 
         self.shader.bind();
-        self.shader.load_mat4(&mtx);
+        self.shader.load_mat4(&mtx.as_slice());
         renderer.submit(self.vertex_array.as_ref(), self.shader.as_ref());
     }
 }

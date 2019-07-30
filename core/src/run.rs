@@ -1,24 +1,20 @@
-use std::thread;
-use std::time::Duration;
-
 use crate::{
-    platform::{
-        create_pm,
+    backend::{
+        interface::{
+            PlatformManager as PlatformManagerInterface,
+            WindowConfig,
+        },
         PlatformManager,
-        WindowConfig,
-    },
-    render::{
         RendererApi,
         RendererConstructor,
-        RendererType,
     },
+    ecs::layer::EcsLayer,
+    render::Renderer,
 };
-use crate::ecs::layer::EcsLayer;
-use crate::render::Renderer;
 
-pub fn build_engine(rtype: RendererType, config: WindowConfig) -> RxEngine {
-    let pm: Box<PlatformManager> = create_pm(config);
-    let (renderer, constructor): (Box<RendererApi>, Box<RendererConstructor>) = pm.create_renderer(rtype);
+pub fn build_engine(config: WindowConfig) -> RxEngine {
+    let pm: PlatformManager = PlatformManager::new(config);
+    let (renderer, constructor): (RendererApi, RendererConstructor) = pm.create_renderer();
     let mut engine = RxEngine::new(pm, renderer, constructor);
     engine.push_layer(EcsLayer::builder());
     engine
@@ -41,15 +37,15 @@ pub struct RxEngine {
     mut_layers: Vec<Box<dyn MutLayer>>,
     ///[NOTE]: opengl renderer should be destroyed before platform manager
     renderer: Renderer,
-    renderer_constructor: Box<dyn RendererConstructor>,
-    platform: Box<dyn PlatformManager>,
+    renderer_constructor: RendererConstructor,
+    platform: PlatformManager,
 }
 
 impl RxEngine {
     pub fn new(
-        platform: Box<PlatformManager>,
-        render_api: Box<RendererApi>,
-        renderer_constructor: Box<RendererConstructor>,
+        platform: PlatformManager,
+        render_api: RendererApi,
+        renderer_constructor: RendererConstructor,
     ) -> RxEngine {
         RxEngine { platform, renderer: Renderer::new(render_api), renderer_constructor, layers: Vec::new(), mut_layers: Vec::new() }
     }
@@ -76,7 +72,7 @@ impl RxEngine {
         for l in self.mut_layers.iter_mut() {
             l.on_update(delta,
                         &mut self.renderer,
-                        self.platform.as_mut());
+                        &mut self.platform);
         }
     }
 
@@ -90,14 +86,14 @@ pub type MutLayerBuilder = Box<FnOnce(&Renderer, &RendererConstructor) -> Box<Mu
 
 impl PushLayer<LayerBuilder> for RxEngine {
     fn push_layer(&mut self, layer_builder: LayerBuilder) {
-        let l = layer_builder(&self.renderer, self.renderer_constructor.as_ref());
+        let l = layer_builder(&self.renderer, &self.renderer_constructor);
         self.layers.push(l);
     }
 }
 
 impl PushLayer<MutLayerBuilder> for RxEngine {
     fn push_layer(&mut self, layer_builder: MutLayerBuilder) {
-        let l = layer_builder(&self.renderer, self.renderer_constructor.as_ref());
+        let l = layer_builder(&self.renderer, &self.renderer_constructor);
         self.mut_layers.push(l);
     }
 }

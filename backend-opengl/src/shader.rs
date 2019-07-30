@@ -5,8 +5,8 @@ use std::sync::mpsc::Receiver;
 
 use gl::Gl;
 
-use crate::render::{Reloadable, ReloadableShader, Shader};
 use std::ops::Deref;
+use backend_interface::Shader;
 
 pub struct OpenGLShader {
     id: u32,
@@ -16,7 +16,7 @@ pub struct OpenGLShader {
 }
 
 impl OpenGLShader {
-    pub fn new_vert_frag(vert_src: &str, frag_src: &str, gl: Rc<Gl>) -> Result<Box<Shader>, String> {
+    pub fn new_vert_frag(vert_src: &str, frag_src: &str, gl: Rc<Gl>) -> Result<OpenGLShader, String> {
         let vert_id = OpenGLShader::shader_from_src(&gl, vert_src, gl::VERTEX_SHADER)?;
         let frag_id = OpenGLShader::shader_from_src(&gl, frag_src, gl::FRAGMENT_SHADER)?;
 
@@ -44,7 +44,7 @@ impl OpenGLShader {
     }
 
 
-    fn validate_program(gl: Rc<Gl>, vert_id: u32, frag_id: u32, id: u32) -> Result<Box<Shader>, String> {
+    fn validate_program(gl: Rc<Gl>, vert_id: u32, frag_id: u32, id: u32) -> Result<OpenGLShader, String> {
         let mut success: gl::types::GLint = 1;
         unsafe {
             gl.GetProgramiv(id, gl::LINK_STATUS, &mut success);
@@ -68,7 +68,7 @@ impl OpenGLShader {
 
             return Err(error.to_string_lossy().into_owned());
         }
-        Ok(Box::new(OpenGLShader { id, vert_id, frag_id, gl }))
+        Ok(OpenGLShader { id, vert_id, frag_id, gl })
     }
 
     fn validate_shader(gl: &Gl, shader_id: u32) -> Result<u32, String> {
@@ -99,11 +99,11 @@ impl Shader for OpenGLShader {
         unsafe { self.gl.UseProgram(self.id); }
     }
 
-    fn load_mat4(&self, mtx: &na::Matrix4<f32>) {
+    fn load_mat4(&self, mtx: &[f32]) {
         unsafe {
             let locaiton = self.gl.GetUniformLocation(self.id, to_gl_str("m"));
             self.gl.UniformMatrix4fv(locaiton, 1, 0,
-                                     &mtx.data.as_slice()[0] as *const f32);
+                                     &mtx[0] as *const f32);
         }
     }
 
@@ -112,56 +112,56 @@ impl Shader for OpenGLShader {
     }
 }
 
-pub struct ReloadableOpenGLShader {
-    gl: Rc<Gl>,
-    shader: RefCell<Option<Box<Shader>>>,
-    receiver: Receiver<(String, String)>,
-}
+//pub struct ReloadableOpenGLShader {
+//    gl: Rc<Gl>,
+//    shader: RefCell<Option<Shader>>,
+//    receiver: Receiver<(String, String)>,
+//}
+//
+//impl ReloadableOpenGLShader {
+//    pub fn new(receiver: Receiver<(String, String)>, gl: Rc<Gl>) -> Self {
+//        ReloadableOpenGLShader { gl, shader: RefCell::new(None), receiver }
+//    }
+//}
 
-impl ReloadableOpenGLShader {
-    pub fn new(receiver: Receiver<(String, String)>, gl: Rc<Gl>) -> Self {
-        ReloadableOpenGLShader { gl, shader: RefCell::new(None), receiver }
-    }
-}
+//impl ReloadableShader for ReloadableOpenGLShader {}
+//
+//impl Shader for ReloadableOpenGLShader {
+//    fn bind(&self) {
+//        self.reload_if_changed();
+//        if let Some(s) = self.shader.borrow().as_ref() {
+//            s.bind();
+//        }
+//    }
+//
+//    fn load_mat4(&self, mtx: &[f32]) {
+//        if let Some(s) = self.shader.borrow().as_ref() {
+//            s.load_mat4(mtx);
+//        }
+//    }
+//
+//    fn unbind(&self) {
+//        if let Some(s) = self.shader.borrow().as_ref() {
+//            s.unbind();
+//        }
+//    }
+//}
 
-impl ReloadableShader for ReloadableOpenGLShader {}
-
-impl Shader for ReloadableOpenGLShader {
-    fn bind(&self) {
-        self.reload_if_changed();
-        if let Some(s) = self.shader.borrow().as_ref() {
-            s.bind();
-        }
-    }
-
-    fn load_mat4(&self, mtx: &na::Matrix4<f32>) {
-        if let Some(s) = self.shader.borrow().as_ref() {
-            s.load_mat4(mtx);
-        }
-    }
-
-    fn unbind(&self) {
-        if let Some(s) = self.shader.borrow().as_ref() {
-            s.unbind();
-        }
-    }
-}
-
-impl Reloadable for ReloadableOpenGLShader {
-    fn reload_if_changed(&self) {
-        if let Ok((vert, frag)) = self.receiver.try_recv() {
-            match OpenGLShader::new_vert_frag(
-                vert.as_str(),
-                frag.as_str(),
-                self.gl.clone()) {
-                Ok(s) => {
-                    self.shader.borrow_mut().replace(s);
-                }
-                Err(s) => { println!("{}", s) }
-            }
-        }
-    }
-}
+//impl Reloadable for ReloadableOpenGLShader {
+//    fn reload_if_changed(&self) {
+//        if let Ok((vert, frag)) = self.receiver.try_recv() {
+//            match OpenGLShader::new_vert_frag(
+//                vert.as_str(),
+//                frag.as_str(),
+//                self.gl.clone()) {
+//                Ok(s) => {
+//                    self.shader.borrow_mut().replace(s);
+//                }
+//                Err(s) => { println!("{}", s) }
+//            }
+//        }
+//    }
+//}
 
 
 impl Drop for OpenGLShader {

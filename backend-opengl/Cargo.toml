@@ -1,0 +1,14 @@
+[package]
+name = "backend-opengl"
+version = "0.1.0"
+authors = ["Oleksandr Tkachov <v-otkachov@expediagroup.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies.backend-interface]
+path="../backend-interface"
+[dependencies.gl]
+path = "../gl"
+[dependencies.glfw]
+git = "https://github.com/bjz/glfw-rs.git"

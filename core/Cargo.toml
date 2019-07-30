@@ -10,14 +10,11 @@ tobj = "0.1.8"
 version = "0.15.0"
 [dependencies.specs-derive]
 version = "0.4.0"
-[dependencies.gl]
-path = "../gl"
-[dependencies.glfw]
-git = "https://github.com/bjz/glfw-rs.git"
+[dependencies.backend-opengl]
+path = "../backend-opengl"
+#[dependencies.backend-interface]
+#path = "../backend-interface"
 [dependencies.nalgebra]
 version = "0.18.0"
 [dependencies.nalgebra-glm]
 version = "0.4.0"
-#imgui
-#[dependencies.imgui]
-#version = "0.1.0"
