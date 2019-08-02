@@ -101,7 +101,8 @@ impl Shader for OpenGLShader {
 
     fn load_mat4(&self, mtx: &[f32]) {
         unsafe {
-            let locaiton = self.gl.GetUniformLocation(self.id, to_gl_str("m"));
+            let string = CString::new("m").unwrap();
+            let locaiton = self.gl.GetUniformLocation(self.id, string.as_ptr());
             self.gl.UniformMatrix4fv(locaiton, 1, 0,
                                      &mtx[0] as *const f32);
         }
