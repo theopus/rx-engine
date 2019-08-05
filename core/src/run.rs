@@ -11,43 +11,60 @@ use crate::{
     ecs::layer::EcsLayer,
     render::Renderer,
 };
+use crate::ecs::layer::EcsLayerBuilder;
 
-pub fn build_engine(config: WindowConfig) -> RxEngine {
+pub fn build_engine<'rx>(config: WindowConfig) -> RxEngine<'rx> {
     let pm: PlatformManager = PlatformManager::new(config);
     let (renderer, constructor): (RendererApi, RendererConstructor) = pm.create_renderer();
     let mut engine = RxEngine::new(pm, renderer, constructor);
-    engine.push_layer(EcsLayer::builder());
+    engine.add_layer_builder(Box::new(EcsLayerBuilder));
     engine
 }
 
 pub trait Layer {
-    fn on_update(&self, delta: f64);
+    fn on_update(&mut self, delay: f64, r: &mut Renderer, rc: &mut RendererConstructor);
 }
 
-pub trait MutLayer {
-    fn on_update(&mut self, delta: f64, renderer: &mut Renderer, platform_manager: &mut PlatformManager);
+pub struct LayerDispatcher<'l> {
+    layers: Vec<Box<dyn Layer + 'l>>
 }
 
-pub trait PushLayer<F> {
-    fn push_layer(&mut self, t: F);
+impl<'l> LayerDispatcher<'l> {
+    pub fn new() -> LayerDispatcher<'l> {
+        LayerDispatcher { layers: Vec::new() }
+    }
+
+    pub fn add_layer(&mut self, layer: Box<dyn Layer + 'l>) {
+        self.layers.push(layer);
+    }
+
+    pub fn run_layers(&mut self, delay: f64, r: &mut Renderer, rc: &mut RendererConstructor) {
+        for l in &mut self.layers {
+            l.on_update(delay, r, rc)
+        }
+    }
 }
 
-pub struct RxEngine {
-    layers: Vec<Box<dyn Layer>>,
-    mut_layers: Vec<Box<dyn MutLayer>>,
+pub struct RxEngine<'r> {
+    layer_dispatcher: LayerDispatcher<'r>,
     ///[NOTE]: opengl renderer should be destroyed before platform manager
-    renderer: Renderer,
+    renderer: Renderer<'r>,
     renderer_constructor: RendererConstructor,
     platform: PlatformManager,
 }
 
-impl RxEngine {
+impl<'r> RxEngine<'r> {
     pub fn new(
         platform: PlatformManager,
         render_api: RendererApi,
         renderer_constructor: RendererConstructor,
-    ) -> RxEngine {
-        RxEngine { platform, renderer: Renderer::new(render_api), renderer_constructor, layers: Vec::new(), mut_layers: Vec::new() }
+    ) -> RxEngine<'r> {
+        RxEngine {
+            platform,
+            renderer: Renderer::new(render_api),
+            renderer_constructor,
+            layer_dispatcher: LayerDispatcher::new(),
+        }
     }
     pub fn run(&mut self) {
         let mut current: f64 = 0f64;
@@ -60,20 +77,14 @@ impl RxEngine {
 
             self.platform.process_events();
             self.renderer.start();
-            self.run_layers(elapsed);
+            self.layer_dispatcher.run_layers(elapsed, &mut self.renderer, &mut self.renderer_constructor);
             self.renderer.end();
         }
     }
 
-    fn run_layers(&mut self, delta: f64) {
-        for l in self.layers.iter() {
-            l.on_update(delta);
-        }
-        for l in self.mut_layers.iter_mut() {
-            l.on_update(delta,
-                        &mut self.renderer,
-                        &mut self.platform);
-        }
+    pub fn add_layer_builder(&mut self, builder: Box<dyn LayerBuilder<'r>>) {
+        let layer = builder.build(&self.renderer, &self.renderer_constructor);
+        self.layer_dispatcher.add_layer(layer);
     }
 
     fn should_run(&self) -> bool {
@@ -81,20 +92,7 @@ impl RxEngine {
     }
 }
 
-pub type LayerBuilder = Box<FnOnce(&Renderer, &RendererConstructor) -> Box<Layer>>;
-pub type MutLayerBuilder = Box<FnOnce(&Renderer, &RendererConstructor) -> Box<MutLayer>>;
-
-impl PushLayer<LayerBuilder> for RxEngine {
-    fn push_layer(&mut self, layer_builder: LayerBuilder) {
-        let l = layer_builder(&self.renderer, &self.renderer_constructor);
-        self.layers.push(l);
-    }
-}
-
-impl PushLayer<MutLayerBuilder> for RxEngine {
-    fn push_layer(&mut self, layer_builder: MutLayerBuilder) {
-        let l = layer_builder(&self.renderer, &self.renderer_constructor);
-        self.mut_layers.push(l);
-    }
+pub trait LayerBuilder<'l> {
+    fn build(&self, r: &Renderer<'l>, rc: &RendererConstructor) -> Box<dyn Layer + 'l>;
 }
 

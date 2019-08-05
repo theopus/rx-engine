@@ -28,9 +28,7 @@ use rx_engine::{
     render::Renderer,
     run::{
         Layer,
-        MutLayer,
-        MutLayerBuilder,
-        PushLayer,
+        LayerBuilder,
     },
     utils::{
         relative_path,
@@ -72,8 +70,8 @@ impl TestLayer {
     }
 }
 
-impl MutLayer for TestLayer {
-    fn on_update(&mut self, delta: f64, renderer: &mut Renderer, platform_manager: &mut PlatformManager) {
+impl Layer for TestLayer {
+    fn on_update(&mut self, delta: f64, renderer: &mut Renderer, platform_manager: &mut RendererConstructor) {
         use rx_engine::na::Matrix4;
         use rx_engine::glm;
 
@@ -82,11 +80,15 @@ impl MutLayer for TestLayer {
         self.rot += 0.001f32;
 
         self.shader.bind();
-        self.shader.load_mat4(&mtx.as_slice());
+        self.shader.load_mat4("m", &mtx.as_slice());
         renderer.submit(self.vertex_array.as_ref(), self.shader.as_ref());
     }
 }
 
-pub fn get_layer(r: &Renderer, rc: &RendererConstructor) -> Box<MutLayer> {
-    Box::new(TestLayer::new(r, rc))
+pub struct SandboxLayerBuilder;
+
+impl<'l> LayerBuilder<'l> for SandboxLayerBuilder {
+    fn build(&self, r: &Renderer<'l>, rc: &RendererConstructor) -> Box<dyn Layer + 'l> {
+        Box::new(TestLayer::new(r, rc))
+    }
 }

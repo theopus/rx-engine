@@ -7,7 +7,7 @@ use std::hash::Hash;
 use std::fmt;
 use std::any::Any;
 
-pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send + Sync  {
+pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send + Sync {
     type VertexArray;
     type VertexBuffer;
     type IndexBuffer;
@@ -64,7 +64,7 @@ pub struct BufferLayout {
 
 pub trait Shader {
     fn bind(&self);
-    fn load_mat4(&self, mtx: &[f32]);
+    fn load_mat4(&self, name: &str, mtx: &[f32]);
     fn unbind(&self);
 }
 

@@ -7,6 +7,7 @@ use gl::Gl;
 
 use std::ops::Deref;
 use backend_interface::Shader;
+use std::os::raw::c_char;
 
 pub struct OpenGLShader {
     id: u32,
@@ -99,10 +100,10 @@ impl Shader for OpenGLShader {
         unsafe { self.gl.UseProgram(self.id); }
     }
 
-    fn load_mat4(&self, mtx: &[f32]) {
+    fn load_mat4(&self, name: &str, mtx: &[f32]) {
         unsafe {
-            let string = CString::new("m").unwrap();
-            let locaiton = self.gl.GetUniformLocation(self.id, string.as_ptr());
+            let string = name.to_owned() + "\0";
+            let locaiton = self.gl.GetUniformLocation(self.id, string.as_str().as_ptr() as *const c_char);
             self.gl.UniformMatrix4fv(locaiton, 1, 0,
                                      &mtx[0] as *const f32);
         }

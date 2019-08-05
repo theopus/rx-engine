@@ -15,39 +15,39 @@ pub mod components {
 
     #[derive(Component, Debug)]
     #[storage(VecStorage)]
-    struct Position {
-        x: f32,
-        y: f32,
-        z: f32,
+    pub struct Position {
+        pub x: f32,
+        pub y: f32,
+        pub z: f32,
     }
 
     #[derive(Component, Debug)]
     #[storage(VecStorage)]
-    struct Rotation {
-        x: f32,
-        y: f32,
-        z: f32,
+    pub struct Rotation {
+        pub x: f32,
+        pub y: f32,
+        pub z: f32,
     }
 
     #[derive(Component, Debug)]
     #[storage(VecStorage)]
-    struct RotationVelocity {
-        x: f32,
-        y: f32,
-        z: f32,
+    pub struct RotationVelocity {
+        pub x: f32,
+        pub y: f32,
+        pub z: f32,
     }
 
     #[derive(Component, Debug)]
     #[storage(VecStorage)]
-    struct Velocity {
-        x: f32,
-        y: f32,
-        z: f32,
+    pub struct Velocity {
+        pub x: f32,
+        pub y: f32,
+        pub z: f32,
     }
 
     #[derive(Component, Debug)]
     #[storage(VecStorage)]
-    struct Transformation {
-        mtx: Matrix4<f32>
+    pub struct Transformation {
+        pub mtx: Matrix4<f32>
     }
 }
