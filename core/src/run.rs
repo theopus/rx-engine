@@ -11,6 +11,7 @@ use crate::{
     ecs::layer::EcsLayer,
     render::Renderer,
 };
+use crate::asset::AssetHolder;
 use crate::ecs::layer::EcsLayerBuilder;
 
 pub fn build_engine<'rx>(config: WindowConfig) -> RxEngine<'rx> {
@@ -22,7 +23,7 @@ pub fn build_engine<'rx>(config: WindowConfig) -> RxEngine<'rx> {
 }
 
 pub trait Layer {
-    fn on_update(&mut self, delay: f64, r: &mut Renderer, rc: &mut RendererConstructor);
+    fn on_update(&mut self, delay: f64, ctx: &mut EngineContext);
 }
 
 pub struct LayerDispatcher<'l> {
@@ -38,9 +39,9 @@ impl<'l> LayerDispatcher<'l> {
         self.layers.push(layer);
     }
 
-    pub fn run_layers(&mut self, delay: f64, r: &mut Renderer, rc: &mut RendererConstructor) {
+    pub fn run_layers(&mut self, delay: f64, ctx: &mut EngineContext) {
         for l in &mut self.layers {
-            l.on_update(delay, r, rc)
+            l.on_update(delay, ctx)
         }
     }
 }
@@ -48,9 +49,14 @@ impl<'l> LayerDispatcher<'l> {
 pub struct RxEngine<'r> {
     layer_dispatcher: LayerDispatcher<'r>,
     ///[NOTE]: opengl renderer should be destroyed before platform manager
-    renderer: Renderer<'r>,
-    renderer_constructor: RendererConstructor,
-    platform: PlatformManager,
+    ctx: EngineContext<'r>
+}
+
+pub struct EngineContext<'r> {
+    pub renderer: Renderer<'r>,
+    pub platform: PlatformManager,
+    pub renderer_constructor: RendererConstructor,
+    pub asset_holder: AssetHolder,
 }
 
 impl<'r> RxEngine<'r> {
@@ -60,9 +66,12 @@ impl<'r> RxEngine<'r> {
         renderer_constructor: RendererConstructor,
     ) -> RxEngine<'r> {
         RxEngine {
-            platform,
-            renderer: Renderer::new(render_api),
-            renderer_constructor,
+            ctx: EngineContext{
+                platform,
+                renderer: Renderer::new(render_api),
+                renderer_constructor,
+                asset_holder: Default::default()
+            },
             layer_dispatcher: LayerDispatcher::new(),
         }
     }
@@ -71,28 +80,28 @@ impl<'r> RxEngine<'r> {
         let mut past: f64 = 0f64;
         while self.should_run() {
             past = current;
-            current = self.platform.current_time();
+            current = self.ctx.platform.current_time();
             let mut elapsed = current - past;
 
 
-            self.platform.process_events();
-            self.renderer.start();
-            self.layer_dispatcher.run_layers(elapsed, &mut self.renderer, &mut self.renderer_constructor);
-            self.renderer.end();
+            self.ctx.platform.process_events();
+            self.ctx.renderer.start();
+            self.layer_dispatcher.run_layers(elapsed, &mut self.ctx);
+            self.ctx.renderer.end();
         }
     }
 
     pub fn add_layer_builder(&mut self, builder: Box<dyn LayerBuilder<'r>>) {
-        let layer = builder.build(&self.renderer, &self.renderer_constructor);
+        let layer = builder.build(&mut self.ctx);
         self.layer_dispatcher.add_layer(layer);
     }
 
     fn should_run(&self) -> bool {
-        !self.platform.should_close()
+        !self.ctx.platform.should_close()
     }
 }
 
 pub trait LayerBuilder<'l> {
-    fn build(&self, r: &Renderer<'l>, rc: &RendererConstructor) -> Box<dyn Layer + 'l>;
+    fn build(&self, r: &mut EngineContext<'l>) -> Box<dyn Layer + 'l>;
 }
 
