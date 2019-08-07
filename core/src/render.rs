@@ -1,11 +1,14 @@
-use std::sync::mpsc;
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::Sender;
+use std::{
+    sync::{
+        mpsc,
+        mpsc::Receiver,
+        mpsc::Sender
+    }
+};
 
 use interface::{RendererApi, Shader};
 
-use crate::asset::{AssetPtr, AssetHolder};
-use crate::run::EngineContext;
+use crate::asset::{AssetHolder, AssetPtr};
 
 pub type DrawIndexed = (AssetPtr<backend::VertexArray>, AssetPtr<backend::Shader>);
 

@@ -39,7 +39,7 @@ struct TestLayer {
 
 impl TestLayer {
     pub fn new(ctx: &mut EngineContext) -> Self {
-        let mut path_buf = &relative_to_current_path(&vec!["resources", "tetrahedron.obj"]);
+        let mut path_buf = &relative_to_current_path(&vec!["client", "resources", "tetrahedron.obj"]);
         let mut loader = Loader;
         let result = loader.load_obj(path_buf);
 
@@ -58,8 +58,8 @@ impl TestLayer {
 
 
         let shader: backend::Shader = ctx.renderer_constructor.reloadable_shader(
-            &relative_to_current_path(&vec!["src", "test", "vert.glsl"]),
-            &relative_to_current_path(&vec!["src", "test", "frag.glsl"]),
+            &relative_to_current_path(&vec!["client", "src", "test", "vert.glsl"]),
+            &relative_to_current_path(&vec!["client", "src", "test", "frag.glsl"]),
             &BufferLayout::with(shared_types::FLOAT_3));
 
         let shader: AssetPtr<backend::Shader> = ctx.asset_holder.storage_mut().put(shader);
