@@ -3,18 +3,10 @@ use std::{
     os::raw::c_void,
     rc::Rc,
 };
-
-use crate::{
-    backend_interface::{
-        BufferLayout,
-        IndexBuffer,
-        VertexArray,
-        VertexBuffer,
-    },
-};
 use crate::Backend;
 use backend_interface::shared_types::Type;
 use backend_interface::Backend as InterfaceBackend;
+use crate::interface::{IndexBuffer, BufferLayout, VertexBuffer, VertexArray};
 
 pub struct GLBuffer {
     id: u32,

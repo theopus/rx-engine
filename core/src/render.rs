@@ -1,34 +1,29 @@
 use crate::{
-    backend::{
-        Shader,
-        RendererApi,
-        VertexArray,
-        interface::Shader as ShaderInterface,
-        interface::RendererApi as RendererApiInterface,
-    }
+    backend
 };
 
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
+use interface::{RendererApi, Shader};
 
-pub type DrawIndexed<'d> = (&'d VertexArray, &'d Shader);
+pub type DrawIndexed<'d> = (&'d backend::VertexArray, &'d backend::Shader);
 
 pub struct Renderer<'d> {
-    api: RendererApi,
+    api: backend::RendererApi,
     sender: Sender<DrawIndexed<'d>>,
     receiver: Receiver<DrawIndexed<'d>>,
 }
 
 impl<'d> Renderer<'d> {
-    pub fn new(api: RendererApi) -> Self {
+    pub fn new(api: backend::RendererApi) -> Self {
         let (s, r) = mpsc::channel();
         Renderer { api, sender: s, receiver: r }
     }
 }
 
 impl<'d> Renderer<'d> {
-    pub fn submit(&mut self, vertex_array: &VertexArray, shader: &Shader) {
+    pub fn submit(&mut self, vertex_array: &backend::VertexArray, shader: &backend::Shader) {
         shader.bind();
         self.api.draw_indexed(vertex_array);
         shader.unbind();
@@ -45,7 +40,7 @@ impl<'d> Renderer<'d> {
         self.sender.clone()
     }
 
-    pub fn api(&self) -> &RendererApi {
+    pub fn api(&self) -> &backend::RendererApi {
         &self.api
     }
 }

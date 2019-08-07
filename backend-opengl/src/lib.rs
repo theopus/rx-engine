@@ -1,9 +1,26 @@
-pub extern crate backend_interface;
+extern crate backend_interface as interface;
 
 mod buffer;
 mod shader;
 mod api;
 mod platform;
+
+pub use buffer::{
+    OpenGLVertexArray as VertexArray,
+    OpenGLVertexBuffer as VertexBuffer,
+    OpenGLIndexBuffer as IndexBuffer,
+};
+pub use shader::{
+    OpenGLShader as Shader,
+    Shader as ShaderInterface
+};
+pub use api::{
+    OpenGLRendererApi as RendererApi,
+    OpenGLRendererConstructor as RendererConstructor
+};
+pub use platform::{
+    GlfwPlatformManager as PlatformManager
+};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Backend {}

@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "client",
+    "core",
+    "backend-interface",
+    "backend-opengl",
+    "gl",
+]

@@ -6,7 +6,7 @@ use std::sync::mpsc::Receiver;
 use gl::Gl;
 
 use std::ops::Deref;
-use backend_interface::Shader;
+pub use backend_interface::Shader;
 use std::os::raw::c_char;
 
 pub struct OpenGLShader {

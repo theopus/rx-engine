@@ -2,7 +2,11 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::process::Output;
 
-use crate::backend::{Shader, VertexArray};
+use backend;
+use interface::{
+    Shader,
+    VertexArray,
+};
 
 pub struct AssetPtr<T> {
     id: u32,
@@ -16,23 +20,42 @@ impl<T> AssetPtr<T> {
 }
 
 pub struct AssetHolder {
-    vertex_array: AssetStorage<VertexArray>,
-    shader: AssetStorage<Shader>,
+    vertex_array: AssetStorage<backend::VertexArray>,
+    shader: AssetStorage<backend::Shader>,
+}
+
+pub trait AssetMarker {
+    fn select_storage(_: &AssetHolder) -> &AssetStorage<Self> where Self: Sized;
+    fn select_storage_mut(_: &mut AssetHolder) -> &mut AssetStorage<Self> where Self: Sized;
+}
+
+impl AssetMarker for backend::VertexArray {
+    fn select_storage(ah: &AssetHolder) -> &AssetStorage<Self> where Self: Sized {
+        &ah.vertex_array
+    }
+
+    fn select_storage_mut(ah: &mut AssetHolder) -> &mut AssetStorage<Self> where Self: Sized {
+        &mut ah.vertex_array
+    }
+}
+
+impl AssetMarker for backend::Shader {
+    fn select_storage(ah: &AssetHolder) -> &AssetStorage<Self> where Self: Sized {
+        &ah.shader
+    }
+
+    fn select_storage_mut(ah: &mut AssetHolder) -> &mut AssetStorage<Self> where Self: Sized {
+        &mut ah.shader
+    }
 }
 
 
 impl AssetHolder {
-    pub fn vertex_array_mut(&mut self) -> &mut AssetStorage<VertexArray> {
-        &mut self.vertex_array
+    pub fn storage<T>(&self) -> &AssetStorage<T> where T: AssetMarker {
+        T::select_storage(self)
     }
-    pub fn shader_mut(&mut self) -> &mut AssetStorage<Shader> {
-        &mut self.shader
-    }
-    pub fn vertex_array(&self) -> &AssetStorage<VertexArray> {
-        &self.vertex_array
-    }
-    pub fn shader(&self) -> &AssetStorage<Shader> {
-        &self.shader
+    pub fn storage_mut<T>(&mut self) -> &mut AssetStorage<T> where T: AssetMarker {
+        T::select_storage_mut(self)
     }
 }
 

@@ -1,22 +1,20 @@
 use crate::{
-    backend::{
-        interface::{
-            PlatformManager as PlatformManagerInterface,
-            WindowConfig,
-        },
-        PlatformManager,
-        RendererApi,
-        RendererConstructor,
-    },
+    backend,
     ecs::layer::EcsLayer,
     render::Renderer,
 };
+use crate::interface::{
+    PlatformManager,
+    RendererConstructor,
+    RendererApi
+};
 use crate::asset::AssetHolder;
 use crate::ecs::layer::EcsLayerBuilder;
+use interface::WindowConfig;
 
 pub fn build_engine<'rx>(config: WindowConfig) -> RxEngine<'rx> {
-    let pm: PlatformManager = PlatformManager::new(config);
-    let (renderer, constructor): (RendererApi, RendererConstructor) = pm.create_renderer();
+    let pm: backend::PlatformManager = backend::PlatformManager::new(config);
+    let (renderer, constructor): (backend::RendererApi, backend::RendererConstructor) = pm.create_renderer();
     let mut engine = RxEngine::new(pm, renderer, constructor);
     engine.add_layer_builder(Box::new(EcsLayerBuilder));
     engine
@@ -54,16 +52,16 @@ pub struct RxEngine<'r> {
 
 pub struct EngineContext<'r> {
     pub renderer: Renderer<'r>,
-    pub platform: PlatformManager,
-    pub renderer_constructor: RendererConstructor,
+    pub platform: backend::PlatformManager,
+    pub renderer_constructor: backend::RendererConstructor,
     pub asset_holder: AssetHolder,
 }
 
 impl<'r> RxEngine<'r> {
     pub fn new(
-        platform: PlatformManager,
-        render_api: RendererApi,
-        renderer_constructor: RendererConstructor,
+        platform: backend::PlatformManager,
+        render_api: backend::RendererApi,
+        renderer_constructor: backend::RendererConstructor,
     ) -> RxEngine<'r> {
         RxEngine {
             ctx: EngineContext{

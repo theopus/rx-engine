@@ -8,13 +8,13 @@ use std::fmt;
 use std::any::Any;
 
 pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send + Sync {
-    type VertexArray;
-    type VertexBuffer;
-    type IndexBuffer;
-    type Shader;
-    type RendererApi;
-    type RendererConstructor;
-    type PlatformManager;
+    type VertexArray: VertexArray<Self>;
+    type VertexBuffer: VertexBuffer<Self>;
+    type IndexBuffer: IndexBuffer<Self>;
+    type Shader: Shader;
+    type RendererApi: RendererApi<Self>;
+    type RendererConstructor: RendererConstructor<Self>;
+    type PlatformManager: PlatformManager<Self>;
 }
 
 pub struct WindowConfig {

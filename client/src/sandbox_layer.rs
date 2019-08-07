@@ -4,25 +4,17 @@ use std::thread;
 use std::time::Duration;
 
 use rx_engine::{
-    backend::{
+    backend,
+    interface::{
+        BufferLayout,
         IndexBuffer,
-        interface::{
-            BufferLayout,
-            IndexBuffer as IBI,
-            PlatformManager as PMI,
-            RendererApi as PAI,
-            RendererConstructor as RCI,
-            Shader as SI,
-            shared_types,
-            VertexArray as VAI,
-            VertexBuffer as VBI,
-        },
         PlatformManager,
         RendererApi,
         RendererConstructor,
         Shader,
+        shared_types,
         VertexArray,
-        VertexBuffer,
+        VertexBuffer
     },
     loader::Loader,
     render::Renderer,
@@ -40,8 +32,8 @@ use rx_engine::asset::{AssetHolder, AssetPtr, AssetStorage};
 use rx_engine::run::EngineContext;
 
 struct TestLayer {
-    va_ptr: AssetPtr<VertexArray>,
-    shader: AssetPtr<Shader>,
+    va_ptr: AssetPtr<backend::VertexArray>,
+    shader: AssetPtr<backend::Shader>,
     rot: f32,
 }
 
@@ -51,9 +43,9 @@ impl TestLayer {
         let mut loader = Loader;
         let result = loader.load_obj(path_buf);
 
-        let mut vertex_array: VertexArray = ctx.renderer_constructor.vertex_array();
+        let mut vertex_array: backend::VertexArray = ctx.renderer_constructor.vertex_array();
         let mut ib = ctx.renderer_constructor.index_buffer(&result.indices);
-        let mut vb: Box<VertexBuffer> = Box::new(ctx.renderer_constructor.vertex_buffer());
+        let mut vb: Box<backend::VertexBuffer> = Box::new(ctx.renderer_constructor.vertex_buffer());
 
         vertex_array.set_index_buffer(ib);
         vb.buffer_data_f32(&result.positions);
@@ -62,15 +54,15 @@ impl TestLayer {
 
         ctx.renderer.api().set_clear_color(0.3, 0.3, 0.9, 1_f32);
 
-        let va_ptr: AssetPtr<VertexArray> = ctx.asset_holder.vertex_array_mut().put(vertex_array);
+        let va_ptr: AssetPtr<backend::VertexArray> = ctx.asset_holder.storage_mut().put(vertex_array);
 
 
-        let shader: Shader = ctx.renderer_constructor.reloadable_shader(
+        let shader: backend::Shader = ctx.renderer_constructor.reloadable_shader(
             &relative_to_current_path(&vec!["src", "test", "vert.glsl"]),
             &relative_to_current_path(&vec!["src", "test", "frag.glsl"]),
             &BufferLayout::with(shared_types::FLOAT_3));
 
-        let shader: AssetPtr<Shader> = ctx.asset_holder.shader_mut().put(shader);
+        let shader: AssetPtr<backend::Shader> = ctx.asset_holder.storage_mut().put(shader);
 
         TestLayer {
             va_ptr,
@@ -89,8 +81,8 @@ impl Layer for TestLayer {
         let mtx: Matrix4<f32> = Matrix4::from_euler_angles(0f32, 0f32, self.rot);
         self.rot += 0.001f32;
 
-        let va = ctx.asset_holder.vertex_array().get_ref(&self.va_ptr).unwrap();
-        let shader = ctx.asset_holder.shader().get_ref(&self.shader).unwrap();
+        let va = ctx.asset_holder.storage().get_ref(&self.va_ptr).unwrap();
+        let shader = ctx.asset_holder.storage().get_ref(&self.shader).unwrap();
         shader.bind();
         shader.load_mat4("m", &mtx.as_slice());
 
