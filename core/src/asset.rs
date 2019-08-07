@@ -13,6 +13,15 @@ pub struct AssetPtr<T> {
     pd: std::marker::PhantomData<T>,
 }
 
+impl<T> Clone for AssetPtr<T> {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id,
+            pd: PhantomData
+        }
+    }
+}
+
 impl<T> AssetPtr<T> {
     fn get_id(&self) -> u32 {
         self.id

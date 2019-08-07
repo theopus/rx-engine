@@ -1,16 +1,13 @@
-use crate::{
-    backend,
-    ecs::layer::EcsLayer,
-    render::Renderer,
-};
-use crate::interface::{
+use interface::{
+    WindowConfig,
     PlatformManager,
-    RendererConstructor,
-    RendererApi
+    RendererApi,
+    RendererConstructor
 };
+
+use crate::render::Renderer;
 use crate::asset::AssetHolder;
 use crate::ecs::layer::EcsLayerBuilder;
-use interface::WindowConfig;
 
 pub fn build_engine<'rx>(config: WindowConfig) -> RxEngine<'rx> {
     let pm: backend::PlatformManager = backend::PlatformManager::new(config);
@@ -47,7 +44,7 @@ impl<'l> LayerDispatcher<'l> {
 pub struct RxEngine<'r> {
     layer_dispatcher: LayerDispatcher<'r>,
     ///[NOTE]: opengl renderer should be destroyed before platform manager
-    ctx: EngineContext<'r>
+    ctx: EngineContext<'r>,
 }
 
 pub struct EngineContext<'r> {
@@ -64,11 +61,11 @@ impl<'r> RxEngine<'r> {
         renderer_constructor: backend::RendererConstructor,
     ) -> RxEngine<'r> {
         RxEngine {
-            ctx: EngineContext{
+            ctx: EngineContext {
                 platform,
                 renderer: Renderer::new(render_api),
                 renderer_constructor,
-                asset_holder: Default::default()
+                asset_holder: Default::default(),
             },
             layer_dispatcher: LayerDispatcher::new(),
         }

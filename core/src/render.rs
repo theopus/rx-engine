@@ -1,10 +1,7 @@
-use crate::{
-    backend
-};
-
 use std::sync::mpsc;
-use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
+
 use interface::{RendererApi, Shader};
 
 pub type DrawIndexed<'d> = (&'d backend::VertexArray, &'d backend::Shader);

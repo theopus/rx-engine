@@ -14,7 +14,7 @@ use rx_engine::{
         Shader,
         shared_types,
         VertexArray,
-        VertexBuffer
+        VertexBuffer,
     },
     loader::Loader,
     render::Renderer,
@@ -81,8 +81,8 @@ impl Layer for TestLayer {
         let mtx: Matrix4<f32> = Matrix4::from_euler_angles(0f32, 0f32, self.rot);
         self.rot += 0.001f32;
 
-        let va = ctx.asset_holder.storage().get_ref(&self.va_ptr).unwrap();
-        let shader = ctx.asset_holder.storage().get_ref(&self.shader).unwrap();
+        let va = ctx.asset_holder.storage().get_ref(&self.va_ptr.clone()).unwrap();
+        let shader = ctx.asset_holder.storage().get_ref(&self.shader.clone()).unwrap();
         shader.bind();
         shader.load_mat4("m", &mtx.as_slice());
 

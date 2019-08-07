@@ -1,15 +1,22 @@
-use std::{fs, thread};
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
-use std::thread::JoinHandle;
-use std::time::{Duration, SystemTime};
-use std::fs::canonicalize;
-use std::path::Path;
-use std::path::PathBuf;
-use std::env;
+use std::{
+    fs::canonicalize,
+    env,
+    collections::HashMap,
+    fs,
+    thread,
+    path::{
+        Path,
+        PathBuf
+    },
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc,
+        mpsc::{Receiver, Sender}
+    },
+    thread::JoinHandle,
+    time::{Duration, SystemTime}
+};
 
 pub struct ResourceListener {
     running: Arc<AtomicBool>,
@@ -119,6 +126,7 @@ pub fn relative_path(relative: &str, target: &[&str]) -> PathBuf {
     }
     path
 }
+
 pub fn relative_to_current_path(target: &[&str]) -> PathBuf {
     let mut base_path = env::current_dir().unwrap();
 
