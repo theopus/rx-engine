@@ -4,26 +4,38 @@ use std::sync::mpsc::Sender;
 
 use interface::{RendererApi, Shader};
 
-pub type DrawIndexed<'d> = (&'d backend::VertexArray, &'d backend::Shader);
+use crate::asset::{AssetPtr, AssetHolder};
+use crate::run::EngineContext;
 
-pub struct Renderer<'d> {
+pub type DrawIndexed = (AssetPtr<backend::VertexArray>, AssetPtr<backend::Shader>);
+
+pub struct Renderer {
     api: backend::RendererApi,
-    sender: Sender<DrawIndexed<'d>>,
-    receiver: Receiver<DrawIndexed<'d>>,
+    sender: Sender<DrawIndexed>,
+    receiver: Receiver<DrawIndexed>,
 }
 
-impl<'d> Renderer<'d> {
+impl Renderer {
     pub fn new(api: backend::RendererApi) -> Self {
         let (s, r) = mpsc::channel();
         Renderer { api, sender: s, receiver: r }
     }
 }
 
-impl<'d> Renderer<'d> {
-    pub fn submit(&mut self, vertex_array: &backend::VertexArray, shader: &backend::Shader) {
-        shader.bind();
-        self.api.draw_indexed(vertex_array);
-        shader.unbind();
+impl Renderer {
+    pub fn submit(&mut self, cmd: DrawIndexed) {
+        self.sender.send(cmd);
+    }
+
+    pub fn process(&self, ctx: &mut AssetHolder) {
+        for cmd in self.receiver.try_iter() {
+            let va: &backend::VertexArray = ctx.storage().get_ref(&cmd.0).unwrap();
+            let shader: &backend::Shader = ctx.storage().get_ref(&cmd.1).unwrap();
+
+            shader.bind();
+            self.api.draw_indexed(va);
+            shader.unbind();
+        }
     }
 
     pub fn start(&self) {
@@ -33,7 +45,7 @@ impl<'d> Renderer<'d> {
         self.api.swap_buffer();
     }
 
-    pub fn get_submitter(&self) -> Sender<DrawIndexed<'d>> {
+    pub fn get_submitter(&self) -> Sender<DrawIndexed> {
         self.sender.clone()
     }
 

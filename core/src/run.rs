@@ -44,11 +44,11 @@ impl<'l> LayerDispatcher<'l> {
 pub struct RxEngine<'r> {
     layer_dispatcher: LayerDispatcher<'r>,
     ///[NOTE]: opengl renderer should be destroyed before platform manager
-    ctx: EngineContext<'r>,
+    ctx: EngineContext,
 }
 
-pub struct EngineContext<'r> {
-    pub renderer: Renderer<'r>,
+pub struct EngineContext {
+    pub renderer: Renderer,
     pub platform: backend::PlatformManager,
     pub renderer_constructor: backend::RendererConstructor,
     pub asset_holder: AssetHolder,
@@ -82,6 +82,7 @@ impl<'r> RxEngine<'r> {
             self.ctx.platform.process_events();
             self.ctx.renderer.start();
             self.layer_dispatcher.run_layers(elapsed, &mut self.ctx);
+            self.ctx.renderer.process(&mut self.ctx.asset_holder);
             self.ctx.renderer.end();
         }
     }
@@ -97,6 +98,6 @@ impl<'r> RxEngine<'r> {
 }
 
 pub trait LayerBuilder<'l> {
-    fn build(&self, r: &mut EngineContext<'l>) -> Box<dyn Layer + 'l>;
+    fn build(&self, r: &mut EngineContext) -> Box<dyn Layer + 'l>;
 }
 

@@ -27,17 +27,17 @@ impl<'a> System<'a> for EmptySystem {
     }
 }
 
-pub struct RenderSystem<'d> {
-    sender: Sender<DrawIndexed<'d>>
+pub struct RenderSystem {
+    sender: Sender<DrawIndexed>
 }
 
-impl<'d> RenderSystem<'d> {
-    pub fn new(sender: Sender<DrawIndexed<'d>>) -> Self {
+impl RenderSystem {
+    pub fn new(sender: Sender<DrawIndexed>) -> Self {
         RenderSystem { sender }
     }
 }
 
-impl<'a, 'd> System<'a> for RenderSystem<'d> {
+impl<'a, 'd> System<'a> for RenderSystem {
     type SystemData = (ReadStorage<'a, Transformation>);
 
     fn run(&mut self, transformation: Self::SystemData) {}
@@ -71,13 +71,13 @@ pub struct EcsLayer<'a> {
 }
 
 impl<'a> EcsLayer<'a> {
-    pub fn new(sender: Sender<DrawIndexed<'a>>) -> Self {
+    pub fn new(sender: Sender<DrawIndexed>) -> Self {
         let mut world: specs::World = specs::WorldExt::new();
         world.register::<Position>();
         world.register::<Rotation>();
         world.register::<Transformation>();
 
-        let render_system: RenderSystem<'a> = RenderSystem::new(sender);
+        let render_system: RenderSystem = RenderSystem::new(sender);
         let dispatcher = specs::DispatcherBuilder::new()
             .with(EmptySystem, "empty_system", &[])
             .with(TransformationSystem, "tsm_system", &[])
@@ -92,7 +92,7 @@ impl<'a> EcsLayer<'a> {
 pub struct EcsLayerBuilder;
 
 impl<'l> LayerBuilder<'l> for EcsLayerBuilder {
-    fn build(&self, ctx: &mut EngineContext<'l>) -> Box<dyn Layer + 'l> {
+    fn build(&self, ctx: &mut EngineContext) -> Box<dyn Layer + 'l> {
         Box::new(EcsLayer::new(ctx.renderer.get_submitter()))
     }
 }

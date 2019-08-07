@@ -81,19 +81,18 @@ impl Layer for TestLayer {
         let mtx: Matrix4<f32> = Matrix4::from_euler_angles(0f32, 0f32, self.rot);
         self.rot += 0.001f32;
 
-        let va = ctx.asset_holder.storage().get_ref(&self.va_ptr.clone()).unwrap();
         let shader = ctx.asset_holder.storage().get_ref(&self.shader.clone()).unwrap();
         shader.bind();
         shader.load_mat4("m", &mtx.as_slice());
 
-        ctx.renderer.submit(va, shader);
+        ctx.renderer.submit((self.va_ptr.clone(), self.shader.clone()));
     }
 }
 
 pub struct SandboxLayerBuilder;
 
 impl<'l> LayerBuilder<'l> for SandboxLayerBuilder {
-    fn build(&self, r: &mut EngineContext<'l>) -> Box<dyn Layer + 'l> {
+    fn build(&self, r: &mut EngineContext) -> Box<dyn Layer + 'l> {
         Box::new(TestLayer::new(r))
     }
 }
