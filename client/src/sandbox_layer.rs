@@ -25,7 +25,6 @@ use rx_engine::{
     utils::{
         relative_path,
         relative_to_current_path,
-        ResourceListener,
     },
 };
 use rx_engine::asset::{AssetHolder, AssetPtr, AssetStorage};
@@ -57,7 +56,7 @@ impl TestLayer {
         let va_ptr: AssetPtr<backend::VertexArray> = ctx.asset_holder.storage_mut().put(vertex_array);
 
 
-        let shader: backend::Shader = ctx.renderer_constructor.reloadable_shader(
+        let shader: backend::Shader = ctx.renderer_constructor.shader(
             &relative_to_current_path(&vec!["client", "src", "test", "vert.glsl"]),
             &relative_to_current_path(&vec!["client", "src", "test", "frag.glsl"]),
             &BufferLayout::with(shared_types::FLOAT_3));

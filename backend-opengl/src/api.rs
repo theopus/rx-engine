@@ -1,8 +1,4 @@
-use std::{
-    path::Path,
-    rc::Rc,
-    sync::mpsc::Receiver
-};
+use std::{path::Path, rc::Rc, sync::mpsc::Receiver, fs};
 
 use backend_interface::{
     IndexBuffer,
@@ -12,7 +8,8 @@ use backend_interface::{
     Shader,
     VertexArray,
     VertexBuffer,
-    BufferLayout
+    BufferLayout,
+    utils::ResourceListener
 };
 
 use crate::{
@@ -24,14 +21,18 @@ use crate::{
     Backend,
     shader::OpenGLShader
 };
+use crate::shader::ReloadableOpenGLShader;
 
 pub struct OpenGLRendererConstructor {
     gl_api: Rc<gl::Gl>,
+    rl: ResourceListener
 }
 
 impl OpenGLRendererConstructor {
     pub fn new(gl_api: Rc<gl::Gl>) -> Self {
-        OpenGLRendererConstructor { gl_api }
+        let mut listener = ResourceListener::new();
+        listener.start();
+        OpenGLRendererConstructor { gl_api, rl: listener }
     }
 }
 
@@ -48,21 +49,24 @@ impl RendererConstructor<Backend> for OpenGLRendererConstructor {
         OpenGLIndexBuffer::new(indexes, self.gl_api.clone())
     }
 
-    fn shader(&self, vertex_src: &str, fragment_src: &str, mem_layout: &BufferLayout) -> <Backend as InterfaceBackend>::Shader {
-        OpenGLShader::new_vert_frag(vertex_src, fragment_src, self.gl_api.clone()).expect("Error during shader creation")
-    }
 
-
-    fn reloadable_shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> <Backend as InterfaceBackend>::Shader {
-//        Box::new(ReloadableOpenGLShader::new(self.rl.listen_pair(
-//            vertex.to_str().unwrap(),
-//            fragment.to_str().unwrap(),
-//        ), self.gl_api.clone()))
-        use std::fs;
-
-        OpenGLShader::new_vert_frag(&fs::read_to_string(vertex).expect(""),
+    #[cfg(not(feature = "hot_reload"))]
+    fn shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> <Backend as InterfaceBackend>::Shader {
+                OpenGLShader::new_vert_frag(&fs::read_to_string(vertex).expect(""),
                                     &fs::read_to_string(fragment).expect(""),
                                     self.gl_api.clone()).expect("Error during shader creation")
+    }
+
+    #[cfg(feature = "hot_reload")]
+    fn shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> <Backend as InterfaceBackend>::Shader {
+        ReloadableOpenGLShader::new(self.rl.listen_pair(
+            vertex.to_str().unwrap(),
+            fragment.to_str().unwrap(),
+        ), self.gl_api.clone())
+
+//        OpenGLShader::new_vert_frag(&fs::read_to_string(vertex).expect(""),
+//                                    &fs::read_to_string(fragment).expect(""),
+//                                    self.gl_api.clone()).expect("Error during shader creation")
     }
 }
 

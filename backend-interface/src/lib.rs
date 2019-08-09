@@ -7,6 +7,8 @@ use std::hash::Hash;
 use std::fmt;
 use std::any::Any;
 
+pub mod utils;
+
 pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send + Sync {
     type VertexArray: VertexArray<Self>;
     type VertexBuffer: VertexBuffer<Self>;
@@ -72,8 +74,7 @@ pub trait RendererConstructor<B: Backend> {
     fn vertex_array(&self) -> B::VertexArray;
     fn vertex_buffer(&self) -> B::VertexBuffer;
     fn index_buffer(&self, indexes: &[u32]) -> B::IndexBuffer;
-    fn shader(&self, vertex_src: &str, fragment_src: &str, mem_layout: &BufferLayout) -> B::Shader;
-    fn reloadable_shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> B::Shader;
+    fn shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> B::Shader;
 }
 
 pub trait RendererApi<B: Backend> {
