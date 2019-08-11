@@ -88,10 +88,10 @@ mod imgui_dev {
         }
     }
 
-    struct ImGuiLayer { renderer: Box<ImGuiRenderer> }
+    struct ImGuiLayer { renderer: backend::ImGuiRenderer }
 
     impl ImGuiLayer {
-        pub fn new(renderer: Box<ImGuiRenderer>) -> Self {
+        pub fn new(renderer: backend::ImGuiRenderer) -> Self {
             ImGuiLayer { renderer }
         }
     }

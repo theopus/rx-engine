@@ -20,6 +20,7 @@ pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send
     type RendererApi: RendererApi<Self>;
     type RendererConstructor: RendererConstructor<Self>;
     type PlatformManager: PlatformManager<Self>;
+    type ImGuiRenderer: ImGuiRenderer;
 }
 
 pub struct WindowConfig {
@@ -30,7 +31,7 @@ pub struct WindowConfig {
 pub trait ImGuiRenderer {
     fn imgui(&self) -> &imgui::ImGui;
     fn imgui_mut(&mut self) -> &mut imgui::ImGui;
-    fn new_frame(&mut self);
+    fn new_frame(&mut self) -> imgui::Ui;
     fn render(&mut self);
 }
 
@@ -43,7 +44,7 @@ pub trait PlatformManager<B: Backend> {
     fn current_time_ms(&self) -> f64 {
         self.current_time() * 1000f64
     }
-    fn imgui_renderer(&mut self) -> Box<dyn ImGuiRenderer>;
+    fn imgui_renderer(&mut self) -> B::ImGuiRenderer;
 }
 
 pub trait VertexArray<B: Backend>: Drop {

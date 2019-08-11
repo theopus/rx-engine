@@ -1,8 +1,8 @@
+extern crate imgui;
 extern crate imgui_glfw_rs;
 extern crate imgui_opengl_renderer;
-extern crate imgui;
 
-use std::cell::{RefCell, Cell};
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -100,10 +100,10 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         self.glfw.borrow().get_time()
     }
 
-    fn imgui_renderer(&mut self) -> Box<ImGuiRenderer> {
+    fn imgui_renderer(&mut self) -> GlfwImGuiRenderer {
         let (s, r) = std::sync::mpsc::channel();
         self.internal_events_senders.push(s);
-        Box::new(GlfwImGuiRenderer::new(self.window.clone(), r))
+        GlfwImGuiRenderer::new(self.window.clone(), r)
     }
 }
 
@@ -133,7 +133,7 @@ impl GlfwImGuiRenderer {
     }
 }
 
-impl<'a> ImGuiRenderer for GlfwImGuiRenderer{
+impl<'a> ImGuiRenderer for GlfwImGuiRenderer {
     fn imgui(&self) -> &imgui::ImGui {
         &self.imgui
     }
@@ -142,16 +142,15 @@ impl<'a> ImGuiRenderer for GlfwImGuiRenderer{
         &mut self.imgui
     }
 
-    fn new_frame(&mut self) {
-//        let new_frame = self.imgui_glfw.frame(&mut *self.window.borrow_mut(), &mut self.imgui);
-//        self.ui.replace(new_frame);
-
+    fn new_frame(&mut self) -> imgui::Ui {
+        self.imgui_glfw.frame(&mut *self.window.borrow_mut(), &mut self.imgui)
     }
+
     fn render(&mut self) {
         let ui = self.imgui_glfw.frame(&mut *self.window.borrow_mut(), &mut self.imgui);
         ui.window(imgui::im_str!("Info"))
             .size((300.0, 100.0), imgui::ImGuiCond::Always)
-            .position((0.0,0.0), imgui::ImGuiCond::Always)
+            .position((0.0, 0.0), imgui::ImGuiCond::Always)
             .build(|| {
                 ui.text(imgui::im_str!("FPS: {:.1}", ui.imgui().get_frame_rate()));
                 let mouse_pos = ui.imgui().mouse_pos();
@@ -159,7 +158,7 @@ impl<'a> ImGuiRenderer for GlfwImGuiRenderer{
             });
 
         self.imgui_renderer.render(ui);
-        for (_, e ) in self.events.try_iter(){
+        for (_, e) in self.events.try_iter() {
             self.imgui_glfw.handle_event(&mut self.imgui, &e)
         }
     }
