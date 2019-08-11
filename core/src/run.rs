@@ -1,44 +1,22 @@
 use interface::{
-    WindowConfig,
     PlatformManager,
     RendererApi,
-    RendererConstructor
+    RendererConstructor,
+    WindowConfig,
 };
 
-use crate::render::Renderer;
 use crate::asset::AssetHolder;
 use crate::ecs::layer::EcsLayerBuilder;
+use crate::render::Renderer;
+use crate::run::imgui_dev::ImGuiLayerBuilder;
 
 pub fn build_engine<'rx>(config: WindowConfig) -> RxEngine<'rx> {
     let pm: backend::PlatformManager = backend::PlatformManager::new(config);
     let (renderer, constructor): (backend::RendererApi, backend::RendererConstructor) = pm.create_renderer();
     let mut engine = RxEngine::new(pm, renderer, constructor);
     engine.add_layer_builder(Box::new(EcsLayerBuilder));
+    engine.add_layer_builder(Box::new(ImGuiLayerBuilder));
     engine
-}
-
-pub trait Layer {
-    fn on_update(&mut self, delay: f64, ctx: &mut EngineContext);
-}
-
-pub struct LayerDispatcher<'l> {
-    layers: Vec<Box<dyn Layer + 'l>>
-}
-
-impl<'l> LayerDispatcher<'l> {
-    pub fn new() -> LayerDispatcher<'l> {
-        LayerDispatcher { layers: Vec::new() }
-    }
-
-    pub fn add_layer(&mut self, layer: Box<dyn Layer + 'l>) {
-        self.layers.push(layer);
-    }
-
-    pub fn run_layers(&mut self, delay: f64, ctx: &mut EngineContext) {
-        for l in &mut self.layers {
-            l.on_update(delay, ctx)
-        }
-    }
 }
 
 pub struct RxEngine<'r> {
@@ -94,6 +72,61 @@ impl<'r> RxEngine<'r> {
 
     fn should_run(&self) -> bool {
         !self.ctx.platform.should_close()
+    }
+}
+
+mod imgui_dev {
+    use interface::{ImGuiRenderer, PlatformManager};
+
+    use crate::run::{EngineContext, Layer, LayerBuilder};
+
+    pub struct ImGuiLayerBuilder;
+
+    impl<'a> LayerBuilder<'a> for ImGuiLayerBuilder {
+        fn build(&self, r: &mut EngineContext) -> Box<dyn Layer> {
+            Box::new(ImGuiLayer::new(r.platform.imgui_renderer()))
+        }
+    }
+
+    struct ImGuiLayer { renderer: Box<ImGuiRenderer> }
+
+    impl ImGuiLayer {
+        pub fn new(renderer: Box<ImGuiRenderer>) -> Self {
+            ImGuiLayer { renderer }
+        }
+    }
+
+    impl Layer for ImGuiLayer {
+        fn on_update(&mut self, delay: f64, ctx: &mut EngineContext) {
+//            let a = self.renderer.frame();
+//            a.show_demo_window(&mut true);
+//            self.renderer.render(a);
+            self.renderer.render();
+        }
+    }
+}
+
+pub trait Layer {
+    fn on_update(&mut self, delay: f64, ctx: &mut EngineContext);
+}
+
+pub struct LayerDispatcher<'l> {
+    layers: Vec<Box<dyn Layer + 'l>>
+}
+
+impl<'l> LayerDispatcher<'l> {
+    pub fn new() -> LayerDispatcher<'l> {
+        LayerDispatcher { layers: Vec::new() }
+    }
+
+    pub fn add_layer(&mut self, layer: Box<dyn Layer + 'l>) {
+        self.layers.push(layer);
+    }
+
+    pub fn run_layers(&mut self, delay: f64, ctx: &mut EngineContext) {
+        for l in &mut self.layers {
+            l.on_update(delay, ctx)
+        }
     }
 }
 

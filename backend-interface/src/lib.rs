@@ -1,11 +1,14 @@
+pub extern crate imgui;
+
+use std::any::Any;
+use std::fmt;
+use std::hash::Hash;
 use std::path::Path;
 use std::slice::Iter;
 use std::sync::mpsc::Receiver;
 
 use self::shared_types::TypeInfo;
-use std::hash::Hash;
-use std::fmt;
-use std::any::Any;
+
 
 pub mod utils;
 
@@ -24,6 +27,13 @@ pub struct WindowConfig {
     pub height: u32,
 }
 
+pub trait ImGuiRenderer {
+    fn imgui(&self) -> &imgui::ImGui;
+    fn imgui_mut(&mut self) -> &mut imgui::ImGui;
+    fn new_frame(&mut self);
+    fn render(&mut self);
+}
+
 pub trait PlatformManager<B: Backend> {
     fn new(config: WindowConfig) -> B::PlatformManager;
     fn create_renderer(&self) -> (B::RendererApi, B::RendererConstructor);
@@ -33,6 +43,7 @@ pub trait PlatformManager<B: Backend> {
     fn current_time_ms(&self) -> f64 {
         self.current_time() * 1000f64
     }
+    fn imgui_renderer(&mut self) -> Box<dyn ImGuiRenderer>;
 }
 
 pub trait VertexArray<B: Backend>: Drop {
