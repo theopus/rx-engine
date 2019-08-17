@@ -1,6 +1,4 @@
-extern crate imgui;
-extern crate imgui_glfw_rs;
-extern crate imgui_opengl_renderer;
+extern crate imgui_glfw as imgui;
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -100,31 +98,31 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         self.glfw.borrow().get_time()
     }
 
-    fn imgui_renderer(&mut self) -> GlfwImGuiRenderer {
+    fn imgui_renderer(&mut self, imgui: &mut imgui::ImGui) -> GlfwImGuiRenderer {
         let (s, r) = std::sync::mpsc::channel();
         self.internal_events_senders.push(s);
-        GlfwImGuiRenderer::new(self.window.clone(), r)
+        GlfwImGuiRenderer::new(self.window.clone(), r, imgui)
     }
 }
 
 pub struct GlfwImGuiRenderer {
-    imgui: imgui::ImGui,
+    window: Rc<RefCell<glfw::Window>>,
     imgui_glfw: imgui_glfw_rs::ImguiGLFW,
     imgui_renderer: imgui_opengl_renderer::Renderer,
-    window: Rc<RefCell<glfw::Window>>,
     events: Receiver<(f64, glfw::WindowEvent)>,
 }
 
 impl GlfwImGuiRenderer {
-    fn new(window: Rc<RefCell<glfw::Window>>, events: Receiver<(f64, glfw::WindowEvent)>) -> GlfwImGuiRenderer {
-        let mut imgui = imgui::ImGui::init();
-        let mut imgui_glfw = imgui_glfw_rs::ImguiGLFW::new(&mut imgui);
+    fn new(window: Rc<RefCell<glfw::Window>>,
+           events: Receiver<(f64, glfw::WindowEvent)>,
+           imgui: &mut imgui::ImGui) -> GlfwImGuiRenderer {
+
+        let mut imgui_glfw = imgui_glfw_rs::ImguiGLFW::new(imgui);
         let mut imgui_renderer = imgui_opengl_renderer::Renderer::new(
-            &mut imgui,
+            imgui,
             |s| (*window).borrow_mut().get_proc_address(s) as _);
 
         GlfwImGuiRenderer {
-            imgui,
             imgui_glfw,
             imgui_renderer,
             window,
@@ -134,32 +132,18 @@ impl GlfwImGuiRenderer {
 }
 
 impl<'a> ImGuiRenderer for GlfwImGuiRenderer {
-    fn imgui(&self) -> &imgui::ImGui {
-        &self.imgui
+    fn new_frame<'im>(&mut self, im: &'im mut imgui::ImGui) -> imgui::Ui<'im> {
+        self.imgui_glfw.frame(&mut *self.window.borrow_mut(), im)
     }
 
-    fn imgui_mut(&mut self) -> &mut imgui::ImGui {
-        &mut self.imgui
-    }
-
-    fn new_frame(&mut self) -> imgui::Ui {
-        self.imgui_glfw.frame(&mut *self.window.borrow_mut(), &mut self.imgui)
-    }
-
-    fn render(&mut self) {
-        let ui = self.imgui_glfw.frame(&mut *self.window.borrow_mut(), &mut self.imgui);
-        ui.window(imgui::im_str!("Info"))
-            .size((300.0, 100.0), imgui::ImGuiCond::Always)
-            .position((0.0, 0.0), imgui::ImGuiCond::Always)
-            .build(|| {
-                ui.text(imgui::im_str!("FPS: {:.1}", ui.imgui().get_frame_rate()));
-                let mouse_pos = ui.imgui().mouse_pos();
-                ui.text(imgui::im_str!("Mouse Position: ({:.1},{:.1})", mouse_pos.0, mouse_pos.1));
-            });
-
+    fn render(&self, ui: imgui::Ui) {
         self.imgui_renderer.render(ui);
+
+    }
+
+    fn handle_events(&mut self, imgui: &mut imgui::ImGui) {
         for (_, e) in self.events.try_iter() {
-            self.imgui_glfw.handle_event(&mut self.imgui, &e)
+            self.imgui_glfw.handle_event(imgui, &e)
         }
     }
 }

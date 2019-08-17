@@ -29,10 +29,9 @@ pub struct WindowConfig {
 }
 
 pub trait ImGuiRenderer {
-    fn imgui(&self) -> &imgui::ImGui;
-    fn imgui_mut(&mut self) -> &mut imgui::ImGui;
-    fn new_frame(&mut self) -> imgui::Ui;
-    fn render(&mut self);
+    fn new_frame<'im>(&mut self, imgui: &'im mut imgui::ImGui) -> imgui::Ui<'im>;
+    fn render(&self, ui: imgui::Ui);
+    fn handle_events(&mut self, imgui: &mut imgui::ImGui);
 }
 
 pub trait PlatformManager<B: Backend> {
@@ -44,7 +43,7 @@ pub trait PlatformManager<B: Backend> {
     fn current_time_ms(&self) -> f64 {
         self.current_time() * 1000f64
     }
-    fn imgui_renderer(&mut self) -> B::ImGuiRenderer;
+    fn imgui_renderer(&mut self, imgui: &mut imgui::ImGui) -> B::ImGuiRenderer;
 }
 
 pub trait VertexArray<B: Backend>: Drop {

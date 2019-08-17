@@ -1,21 +1,14 @@
-use interface::{
-    PlatformManager,
-    RendererApi,
-    RendererConstructor,
-    WindowConfig,
-};
+use interface::{ImGuiRenderer, PlatformManager, RendererApi, RendererConstructor, WindowConfig};
 
 use crate::asset::AssetHolder;
 use crate::ecs::layer::EcsLayerBuilder;
 use crate::render::Renderer;
-use crate::run::imgui_dev::ImGuiLayerBuilder;
 
 pub fn build_engine<'rx>(config: WindowConfig) -> RxEngine<'rx> {
     let pm: backend::PlatformManager = backend::PlatformManager::new(config);
     let (renderer, constructor): (backend::RendererApi, backend::RendererConstructor) = pm.create_renderer();
     let mut engine = RxEngine::new(pm, renderer, constructor);
     engine.add_layer_builder(Box::new(EcsLayerBuilder));
-    engine.add_layer_builder(Box::new(ImGuiLayerBuilder));
     engine
 }
 
@@ -23,6 +16,7 @@ pub struct RxEngine<'r> {
     layer_dispatcher: LayerDispatcher<'r>,
     ///[NOTE]: opengl renderer should be destroyed before platform manager
     ctx: EngineContext,
+    imgui_ctx: ImGuiContext,
 }
 
 pub struct EngineContext {
@@ -32,12 +26,27 @@ pub struct EngineContext {
     pub asset_holder: AssetHolder,
 }
 
+pub struct FrameContext<'f> {
+    pub elapsed: f64,
+    pub ui: imgui::Ui<'f>,
+}
+
+pub struct ImGuiContext {
+    pub imgui: imgui::ImGui,
+    pub imgui_renderer: backend::ImGuiRenderer,
+
+}
+
 impl<'r> RxEngine<'r> {
     pub fn new(
-        platform: backend::PlatformManager,
+        mut platform: backend::PlatformManager,
         render_api: backend::RendererApi,
         renderer_constructor: backend::RendererConstructor,
     ) -> RxEngine<'r> {
+        let mut imgui = imgui::ImGui::init();
+        let mut renderer = platform.imgui_renderer(&mut imgui);
+
+
         RxEngine {
             ctx: EngineContext {
                 platform,
@@ -45,6 +54,7 @@ impl<'r> RxEngine<'r> {
                 renderer_constructor,
                 asset_holder: Default::default(),
             },
+            imgui_ctx: ImGuiContext { imgui, imgui_renderer: renderer },
             layer_dispatcher: LayerDispatcher::new(),
         }
     }
@@ -52,16 +62,28 @@ impl<'r> RxEngine<'r> {
         let mut current: f64 = 0f64;
         let mut past: f64 = 0f64;
         while self.should_run() {
-            past = current;
-            current = self.ctx.platform.current_time();
-            let mut elapsed = current - past;
+
+            {
+                past = current;
+                current = self.ctx.platform.current_time();
+
+                self.ctx.platform.process_events();
+                self.imgui_ctx.imgui_renderer.handle_events(&mut self.imgui_ctx.imgui);
+
+                let mut frame = FrameContext {
+                    elapsed: current - past,
+                    ui: self.imgui_ctx.imgui_renderer.new_frame(&mut self.imgui_ctx.imgui),
+                };
 
 
-            self.ctx.platform.process_events();
-            self.ctx.renderer.start();
-            self.layer_dispatcher.run_layers(elapsed, &mut self.ctx);
-            self.ctx.renderer.process(&mut self.ctx.asset_holder);
-            self.ctx.renderer.end();
+                self.ctx.renderer.start();
+                self.layer_dispatcher.run_layers(&frame, &mut self.ctx);
+                self.ctx.renderer.process(&mut self.ctx.asset_holder);
+
+                self.imgui_ctx.imgui_renderer.render(frame.ui);
+                self.ctx.renderer.end();
+            }
+
         }
     }
 
@@ -75,39 +97,10 @@ impl<'r> RxEngine<'r> {
     }
 }
 
-mod imgui_dev {
-    use interface::{ImGuiRenderer, PlatformManager};
-
-    use crate::run::{EngineContext, Layer, LayerBuilder};
-
-    pub struct ImGuiLayerBuilder;
-
-    impl<'a> LayerBuilder<'a> for ImGuiLayerBuilder {
-        fn build(&self, r: &mut EngineContext) -> Box<dyn Layer> {
-            Box::new(ImGuiLayer::new(r.platform.imgui_renderer()))
-        }
-    }
-
-    struct ImGuiLayer { renderer: backend::ImGuiRenderer }
-
-    impl ImGuiLayer {
-        pub fn new(renderer: backend::ImGuiRenderer) -> Self {
-            ImGuiLayer { renderer }
-        }
-    }
-
-    impl Layer for ImGuiLayer {
-        fn on_update(&mut self, delay: f64, ctx: &mut EngineContext) {
-//            let a = self.renderer.frame();
-//            a.show_demo_window(&mut true);
-//            self.renderer.render(a);
-            self.renderer.render();
-        }
-    }
-}
+mod imgui_dev {}
 
 pub trait Layer {
-    fn on_update(&mut self, delay: f64, ctx: &mut EngineContext);
+    fn on_update(&mut self, frame: &FrameContext, ctx: &mut EngineContext);
 }
 
 pub struct LayerDispatcher<'l> {
@@ -123,9 +116,9 @@ impl<'l> LayerDispatcher<'l> {
         self.layers.push(layer);
     }
 
-    pub fn run_layers(&mut self, delay: f64, ctx: &mut EngineContext) {
+    pub fn run_layers(&mut self, frame: &FrameContext, ctx: &mut EngineContext) {
         for l in &mut self.layers {
-            l.on_update(delay, ctx)
+            l.on_update(frame, ctx)
         }
     }
 }

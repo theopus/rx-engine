@@ -16,7 +16,7 @@ use crate::ecs::components::{Position, Rotation, Transformation};
 use crate::ecs::DeltaTime;
 use crate::render::DrawIndexed;
 use crate::render::Renderer;
-use crate::run::{EngineContext, Layer, LayerBuilder};
+use crate::run::{EngineContext, Layer, LayerBuilder, FrameContext};
 
 pub struct EmptySystem;
 
@@ -98,10 +98,10 @@ impl<'l> LayerBuilder<'l> for EcsLayerBuilder {
 }
 
 impl<'a> Layer for EcsLayer<'a> {
-    fn on_update(&mut self, delta: f64, ctx: &mut EngineContext) {
+    fn on_update(&mut self, frame: &FrameContext, ctx: &mut EngineContext) {
         {
             let mut delta_resource = self.world.write_resource::<DeltaTime>();
-            *delta_resource = DeltaTime(delta);
+            *delta_resource = DeltaTime(frame.elapsed);
             //dropping resource borrow
         }
 

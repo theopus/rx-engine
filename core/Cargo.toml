@@ -6,7 +6,8 @@ edition = "2018"
 
 [dependencies]
 tobj = "0.1.8"
-imgui = "0.0.22"
+#imgui = { version = "0.1.0"}
+imgui = { version = "0.0.22"}
 
 [dependencies.specs]
 version = "0.15.0"
@@ -14,7 +15,7 @@ version = "0.15.0"
 version = "0.4.0"
 [dependencies.backend-opengl]
 path = "../backend-opengl"
-features = ["hot_reload"]
+features = ["hot_reload", "glfw_backend"]
 [dependencies.backend-interface]
 path = "../backend-interface"
 [dependencies.nalgebra]

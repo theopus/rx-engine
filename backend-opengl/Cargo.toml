@@ -8,14 +8,23 @@ edition = "2018"
 
 [features]
 hot_reload = []
+glfw_backend = []
+glium_backend = []
+
 
 [dependencies]
+#
 imgui-opengl-renderer = "0.4.0"
 imgui-glfw-rs = "0.3.0"
-imgui = "0.0.22"
+imgui_glfw = {version = "0.0.22", package= "imgui"}
+#
+glium = { version = "0.25", default-features = false }
+imgui_glium = { version = "0.1.0", features = ["glium"], package= "imgui" }
+
 [dependencies.backend-interface]
 path="../backend-interface"
 [dependencies.gl]
 path = "../gl"
+
 #[dependencies.glfw]
 #git = "https://github.com/bjz/glfw-rs.git"

@@ -6,4 +6,5 @@ members = [
     "backend-interface",
     "backend-opengl",
     "gl",
+    "playground",
 ]

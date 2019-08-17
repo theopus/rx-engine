@@ -3,7 +3,10 @@ extern crate backend_interface as interface;
 mod buffer;
 mod shader;
 mod api;
-mod platform;
+#[cfg(feature = "glfw_backend")]
+mod platform_glfw;
+#[cfg(feature = "glium")]
+mod platform_glium;
 
 pub use buffer::{
     OpenGLVertexArray as VertexArray,
@@ -28,7 +31,9 @@ pub use api::{
     OpenGLRendererApi as RendererApi,
     OpenGLRendererConstructor as RendererConstructor
 };
-pub use platform::{
+
+#[cfg(feature = "glfw_backend")]
+pub use platform_glfw::{
     GlfwPlatformManager as PlatformManager,
     GlfwImGuiRenderer as ImGuiRenderer
 };
@@ -48,6 +53,9 @@ impl backend_interface::Backend for Backend {
 
     type RendererApi = api::OpenGLRendererApi;
     type RendererConstructor = api::OpenGLRendererConstructor;
-    type PlatformManager = platform::GlfwPlatformManager;
-    type ImGuiRenderer = platform::GlfwImGuiRenderer;
+
+    #[cfg(feature = "glfw_backend")]
+    type PlatformManager = platform_glfw::GlfwPlatformManager;
+    #[cfg(feature = "glfw_backend")]
+    type ImGuiRenderer = platform_glfw::GlfwImGuiRenderer;
 }

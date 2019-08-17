@@ -28,7 +28,7 @@ use rx_engine::{
     },
 };
 use rx_engine::asset::{AssetHolder, AssetPtr, AssetStorage};
-use rx_engine::run::EngineContext;
+use rx_engine::run::{EngineContext, FrameContext};
 
 struct TestLayer {
     va_ptr: AssetPtr<backend::VertexArray>,
@@ -71,8 +71,10 @@ impl TestLayer {
     }
 }
 
+use rx_engine::imgui;
+
 impl Layer for TestLayer {
-    fn on_update(&mut self, delta: f64, ctx: &mut EngineContext) {
+    fn on_update(&mut self, frame: &FrameContext, ctx: &mut EngineContext) {
         use rx_engine::na::Matrix4;
         use rx_engine::glm;
 
@@ -80,6 +82,17 @@ impl Layer for TestLayer {
         let mtx: Matrix4<f32> = Matrix4::from_euler_angles(0f32, 0f32, self.rot);
         self.rot += 0.001f32;
 
+
+        let ui = &frame.ui;
+//        ui.window(imgui::im_str!("Info"))
+//            .size((300.0, 100.0), imgui::ImGuiCond::Always)
+//            .position((1.0, 1.0), imgui::ImGuiCond::Always)
+//            .build(|| {
+//                ui.text(imgui::im_str!("FPS: {:.1}", ui.imgui().get_frame_rate()));
+//                let mouse_pos = ui.imgui().mouse_pos();
+//                ui.text(imgui::im_str!("Mouse Position: ({:.1},{:.1})", mouse_pos.0, mouse_pos.1));
+//            });
+        ui.show_demo_window(&mut true);
         let shader = ctx.asset_holder.storage().get_ref(&self.shader.clone()).unwrap();
         shader.bind();
         shader.load_mat4("m", &mtx.as_slice());

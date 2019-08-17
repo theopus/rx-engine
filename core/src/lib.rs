@@ -1,5 +1,6 @@
 pub extern crate backend_interface as interface;
 pub extern crate backend_opengl as backend;
+pub extern crate imgui;
 ///maths
 pub extern crate nalgebra as na;
 pub extern crate nalgebra_glm as glm;
