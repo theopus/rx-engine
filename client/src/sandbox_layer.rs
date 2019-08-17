@@ -84,14 +84,14 @@ impl Layer for TestLayer {
 
 
         let ui = &frame.ui;
-//        ui.window(imgui::im_str!("Info"))
-//            .size((300.0, 100.0), imgui::ImGuiCond::Always)
-//            .position((1.0, 1.0), imgui::ImGuiCond::Always)
-//            .build(|| {
-//                ui.text(imgui::im_str!("FPS: {:.1}", ui.imgui().get_frame_rate()));
-//                let mouse_pos = ui.imgui().mouse_pos();
-//                ui.text(imgui::im_str!("Mouse Position: ({:.1},{:.1})", mouse_pos.0, mouse_pos.1));
-//            });
+        ui.window(imgui::im_str!("Info"))
+            .size((300.0, 100.0), imgui::ImGuiCond::Always)
+            .position((1.0, 1.0), imgui::ImGuiCond::Always)
+            .build(|| {
+                ui.text(imgui::im_str!("FPS: {:.1}", ui.imgui().get_frame_rate()));
+                let mouse_pos = ui.imgui().mouse_pos();
+                ui.text(imgui::im_str!("Mouse Position: ({:.1},{:.1})", mouse_pos.0, mouse_pos.1));
+            });
         ui.show_demo_window(&mut true);
         let shader = ctx.asset_holder.storage().get_ref(&self.shader.clone()).unwrap();
         shader.bind();

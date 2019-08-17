@@ -8,6 +8,7 @@ mod platform_glfw;
 #[cfg(feature = "glium")]
 mod platform_glium;
 
+mod imgui_glfw;
 pub use buffer::{
     OpenGLVertexArray as VertexArray,
     OpenGLVertexBuffer as VertexBuffer,

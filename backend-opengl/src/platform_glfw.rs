@@ -1,11 +1,11 @@
-extern crate imgui_glfw as imgui;
+extern crate imgui;
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender};
 
-use imgui_glfw_rs::glfw;
-use imgui_glfw_rs::glfw::SwapInterval;
+use glfw;
+use glfw::SwapInterval;
 
 use backend_interface::Backend as InterfaceBackend;
 use backend_interface::ImGuiRenderer;
@@ -14,6 +14,7 @@ use backend_interface::WindowConfig;
 use glfw::Action;
 use glfw::Context;
 use glfw::Key;
+use crate::imgui_glfw as imgui_glfw_rs;
 
 use crate::api::OpenGLRendererApi;
 use crate::api::OpenGLRendererConstructor;

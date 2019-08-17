@@ -77,7 +77,7 @@ pub struct OpenGLRendererApi {
 
 impl OpenGLRendererApi {
     pub fn new(gl_api: Rc<gl::Gl>, swap_buffers: Box<FnMut() -> ()>) -> OpenGLRendererApi {
-        unsafe { gl_api.Viewport(0, 0, 600, 400); }
+        unsafe { gl_api.Viewport(0, 0, 1200, 800); }
         OpenGLRendererApi { gl_api, swap_buffers }
     }
 }
