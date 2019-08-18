@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 tobj = "0.1.8"
 #imgui = { version = "0.1.0"}
-imgui = { version = "0.0.22"}
+imgui = { version = "0.1.0"}
 
 [dependencies.specs]
 version = "0.15.0"

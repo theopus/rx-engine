@@ -85,8 +85,8 @@ impl Layer for TestLayer {
 
         let ui = &frame.ui;
         ui.window(imgui::im_str!("Info"))
-            .size((300.0, 100.0), imgui::ImGuiCond::Always)
-            .position((1.0, 1.0), imgui::ImGuiCond::Always)
+            .size([300.0, 100.0], imgui::Condition::Always)
+            .position([1.0, 1.0], imgui::Condition::Always)
             .build(|| {
                 ui.text(imgui::im_str!("FPS: {:.1}", ui.imgui().get_frame_rate()));
                 let mouse_pos = ui.imgui().mouse_pos();

@@ -15,6 +15,7 @@ use glfw::Action;
 use glfw::Context;
 use glfw::Key;
 use crate::imgui_glfw as imgui_glfw_rs;
+use crate::imgui_glfw_render as imgui_opengl_renderer;
 
 use crate::api::OpenGLRendererApi;
 use crate::api::OpenGLRendererConstructor;
@@ -118,7 +119,7 @@ impl GlfwImGuiRenderer {
            events: Receiver<(f64, glfw::WindowEvent)>,
            imgui: &mut imgui::ImGui) -> GlfwImGuiRenderer {
 
-        let mut imgui_glfw = imgui_glfw_rs::ImguiGLFW::new(imgui);
+        let mut imgui_glfw = imgui_glfw_rs::ImguiGLFW::new(imgui, &*window.borrow());
         let mut imgui_renderer = imgui_opengl_renderer::Renderer::new(
             imgui,
             |s| (*window).borrow_mut().get_proc_address(s) as _);

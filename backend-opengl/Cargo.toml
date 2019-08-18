@@ -12,8 +12,8 @@ glfw_backend = []
 
 [dependencies]
 #
-imgui-opengl-renderer = "0.4.0"
-imgui = {version = "0.0.22", package= "imgui"}
+#imgui-opengl-renderer = "0.4.0"
+imgui = {version = "0.1.0", package= "imgui"}
 #
 [dependencies.backend-interface]
 path="../backend-interface"
