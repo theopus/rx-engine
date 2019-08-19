@@ -32,7 +32,7 @@ pub struct FrameContext<'f> {
 }
 
 pub struct ImGuiContext {
-    pub imgui: imgui::ImGui,
+    pub imgui: imgui::Context,
     pub imgui_renderer: backend::ImGuiRenderer,
 
 }
@@ -43,7 +43,7 @@ impl<'r> RxEngine<'r> {
         render_api: backend::RendererApi,
         renderer_constructor: backend::RendererConstructor,
     ) -> RxEngine<'r> {
-        let mut imgui = imgui::ImGui::init();
+        let mut imgui = imgui::Context::init();
         let mut renderer = platform.imgui_renderer(&mut imgui);
 
 
@@ -117,6 +117,7 @@ impl<'l> LayerDispatcher<'l> {
     }
 
     pub fn run_layers(&mut self, frame: &FrameContext, ctx: &mut EngineContext) {
+        self.layers.drain()
         for l in &mut self.layers {
             l.on_update(frame, ctx)
         }

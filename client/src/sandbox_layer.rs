@@ -28,6 +28,7 @@ use rx_engine::{
     },
 };
 use rx_engine::asset::{AssetHolder, AssetPtr, AssetStorage};
+use rx_engine::imgui;
 use rx_engine::run::{EngineContext, FrameContext};
 
 struct TestLayer {
@@ -71,8 +72,6 @@ impl TestLayer {
     }
 }
 
-use rx_engine::imgui;
-
 impl Layer for TestLayer {
     fn on_update(&mut self, frame: &FrameContext, ctx: &mut EngineContext) {
         use rx_engine::na::Matrix4;
@@ -85,14 +84,24 @@ impl Layer for TestLayer {
 
         let ui = &frame.ui;
         ui.window(imgui::im_str!("Info"))
-            .size([300.0, 100.0], imgui::Condition::Always)
+            .size([300.0, 300.0], imgui::Condition::Once)
             .position([1.0, 1.0], imgui::Condition::Always)
             .build(|| {
-                ui.text(imgui::im_str!("FPS: {:.1}", ui.imgui().get_frame_rate()));
+                let io: &imgui::Io = ui.io();
+                ui.text(imgui::im_str!("{:.1} fps", ui.imgui().get_frame_rate()));
+                ui.text(imgui::im_str!("{:.1} ms/f", io.delta_time * 1000.));
                 let mouse_pos = ui.imgui().mouse_pos();
+
+                let [w, h] = io.display_size;
+                let (fw, fh) = {
+                    let [ws, hs] = io.display_framebuffer_scale;
+                    (w * ws, h * hs)
+                };
+                ui.separator();
+                ui.text(imgui::im_str!("{:.0} x {:.0} window", w,h));
+                ui.text(imgui::im_str!("{:.0} x {:.0} framebuffer", fw,fh));
                 ui.text(imgui::im_str!("Mouse Position: ({:.1},{:.1})", mouse_pos.0, mouse_pos.1));
             });
-        ui.show_demo_window(&mut true);
         let shader = ctx.asset_holder.storage().get_ref(&self.shader.clone()).unwrap();
         shader.bind();
         shader.load_mat4("m", &mtx.as_slice());

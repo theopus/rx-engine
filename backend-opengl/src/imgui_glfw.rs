@@ -1,16 +1,17 @@
-/// Use the reexported glfw crate to avoid version conflicts.
-pub use glfw;
 /// Use the reexported imgui crate to avoid version conflicts.
 extern crate imgui;
 
-use glfw::ffi::GLFWwindow;
-use glfw::{Action, Key, Modifiers, MouseButton, StandardCursor, Window, WindowEvent};
-use imgui::sys as imgui_sys;
-use imgui::Key as ImGuiKey;
-use imgui::MouseCursor as ImGuiMouseCursor;
-use imgui::{ImGui};
 use std::os::raw::{c_char, c_void};
 use std::time::Instant;
+
+/// Use the reexported glfw crate to avoid version conflicts.
+pub use glfw;
+use glfw::{Action, Key, Modifiers, MouseButton, StandardCursor, Window, WindowEvent};
+use glfw::ffi::GLFWwindow;
+use imgui::ImGui;
+use imgui::Key as ImGuiKey;
+use imgui::MouseCursor as ImGuiMouseCursor;
+use imgui::sys as imgui_sys;
 
 static mut WINDOW: *mut c_void = std::ptr::null_mut() as *mut c_void;
 
@@ -28,16 +29,11 @@ impl ImguiGLFW {
         }
 
         {
-
             let window_size = window.get_size();
             let dpi_factor = window.get_framebuffer_size().0 / window_size.0;
             let io = imgui.io_mut();
             io.display_size = [window_size.0 as f32, window_size.1 as f32];
             io.display_framebuffer_scale = [dpi_factor as f32, dpi_factor as f32];
-//            let io = unsafe { &mut *imgui_sys::igGetIO() };
-//            io.get_clipboard_text_fn = Some(get_clipboard_text);
-//            io.set_clipboard_text_fn = Some(set_clipboard_text);
-//            io.clipboard_user_data = std::ptr::null_mut();
         }
 
         {
@@ -107,6 +103,28 @@ impl ImguiGLFW {
         }
     }
 
+    pub fn prepare_render(&self,
+                          ui: &imgui::Ui,
+                          window: &mut Window,) {
+        match ui.mouse_cursor() {
+            None => {}
+            Some(cursor) => {
+                let glfw_cusor = match cursor {
+                    ImGuiMouseCursor::Arrow => StandardCursor::Arrow,
+                    ImGuiMouseCursor::TextInput => StandardCursor::IBeam,
+                    ImGuiMouseCursor::ResizeAll => StandardCursor::Arrow,
+                    ImGuiMouseCursor::ResizeNS => StandardCursor::VResize,
+                    ImGuiMouseCursor::ResizeEW => StandardCursor::HResize,
+                    ImGuiMouseCursor::ResizeNESW => StandardCursor::Arrow,
+                    ImGuiMouseCursor::ResizeNWSE => StandardCursor::Arrow,
+                    ImGuiMouseCursor::Hand => StandardCursor::Hand,
+                };
+
+                window.set_cursor(Some(glfw::Cursor::standard(glfw_cusor)));
+            }
+        }
+    }
+
     pub fn frame<'a>(&mut self, window: &mut Window, imgui: &'a mut ImGui) -> imgui::Ui<'a> {
 //        let mouse_cursor = imgui.mouse_cursor();
 //        if imgui.mouse_draw_cursor() || mouse_cursor == ImGuiMouseCursor::None {
@@ -128,6 +146,7 @@ impl ImguiGLFW {
 //            window.set_cursor(Some(glfw::Cursor::standard(cursor)));
 //        }
 
+
         let now = Instant::now();
         let delta = now - self.last_frame;
         let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
@@ -135,17 +154,10 @@ impl ImguiGLFW {
 
         let window_size = window.get_size();
         let dpi_factor = window.get_framebuffer_size().0 / window_size.0;
-
-        let window_size = window.get_size();
-        let dpi_factor = window.get_framebuffer_size().0 / window_size.0;
         let io = imgui.io_mut();
         io.display_size = [window_size.0 as f32, window_size.1 as f32];
         io.display_framebuffer_scale = [dpi_factor as f32, dpi_factor as f32];
-
-//        let frame_size = imgui::FrameSize {
-//            logical_size: (f64::from(window_size.0), f64::from(window_size.1)),
-//            hidpi_factor: dpi_factor as f64,
-//        };
+        io.delta_time = delta_s;
         imgui.frame()
     }
 

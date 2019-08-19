@@ -5,21 +5,21 @@ use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender};
 
 use glfw;
+use glfw::Action;
+use glfw::Context;
+use glfw::Key;
 use glfw::SwapInterval;
 
 use backend_interface::Backend as InterfaceBackend;
 use backend_interface::ImGuiRenderer;
 use backend_interface::PlatformManager;
 use backend_interface::WindowConfig;
-use glfw::Action;
-use glfw::Context;
-use glfw::Key;
-use crate::imgui_glfw as imgui_glfw_rs;
-use crate::imgui_glfw_render as imgui_opengl_renderer;
 
 use crate::api::OpenGLRendererApi;
 use crate::api::OpenGLRendererConstructor;
 use crate::Backend;
+use crate::imgui_glfw as imgui_glfw_rs;
+use crate::imgui_glfw_render as imgui_opengl_renderer;
 
 pub struct GlfwPlatformManager {
     glfw: RefCell<glfw::Glfw>,
@@ -35,14 +35,17 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
 
         //excplicit 3.3 (needed for macOS)
         glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
-        glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
         glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
-        let (mut window, events) =
+
+        let (mut window, events) = glfw.with_primary_monitor(|glfw, m| {
             glfw.create_window(config.width, config.height, "Hello this is window",
-                               glfw::WindowMode::Windowed)
-                .expect("Failed to create GLFWRefCell::from(window window.");
+//                               m.map_or(
+                               glfw::WindowMode::Windowed,
+//                                   |m| glfw::WindowMode::FullScreen(m))
+            )
+        }).expect("Failed to create GLFW window.");
 
         window.set_framebuffer_size_polling(true);
         window.set_cursor_pos_polling(true);
@@ -53,6 +56,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
 
 
         glfw.make_context_current(Option::from(&window));
+        glfw.set_swap_interval(SwapInterval::Sync(2));
 
         use std::rc::Rc;
         window.show();
@@ -72,12 +76,10 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         let gl = Rc::from(gl);
 
         let mut ctx = self.window.borrow_mut().render_context();
-        self.glfw.borrow_mut().set_swap_interval(SwapInterval::Sync(0));
+
         (
             OpenGLRendererApi::new(gl.clone(),
-                                   Box::from(move || {
-                                       ctx.swap_buffers();
-                                   })),
+                                   Box::from(move || ctx.swap_buffers())),
             OpenGLRendererConstructor::new(gl.clone())
         )
     }
@@ -100,7 +102,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         self.glfw.borrow().get_time()
     }
 
-    fn imgui_renderer(&mut self, imgui: &mut imgui::ImGui) -> GlfwImGuiRenderer {
+    fn imgui_renderer(&mut self, imgui: &mut imgui::Context) -> GlfwImGuiRenderer {
         let (s, r) = std::sync::mpsc::channel();
         self.internal_events_senders.push(s);
         GlfwImGuiRenderer::new(self.window.clone(), r, imgui)
@@ -117,8 +119,7 @@ pub struct GlfwImGuiRenderer {
 impl GlfwImGuiRenderer {
     fn new(window: Rc<RefCell<glfw::Window>>,
            events: Receiver<(f64, glfw::WindowEvent)>,
-           imgui: &mut imgui::ImGui) -> GlfwImGuiRenderer {
-
+           imgui: &mut imgui::Context) -> GlfwImGuiRenderer {
         let mut imgui_glfw = imgui_glfw_rs::ImguiGLFW::new(imgui, &*window.borrow());
         let mut imgui_renderer = imgui_opengl_renderer::Renderer::new(
             imgui,
@@ -134,16 +135,16 @@ impl GlfwImGuiRenderer {
 }
 
 impl<'a> ImGuiRenderer for GlfwImGuiRenderer {
-    fn new_frame<'im>(&mut self, im: &'im mut imgui::ImGui) -> imgui::Ui<'im> {
+    fn new_frame<'im>(&mut self, im: &'im mut imgui::Context) -> imgui::Ui<'im> {
         self.imgui_glfw.frame(&mut *self.window.borrow_mut(), im)
     }
 
     fn render(&self, ui: imgui::Ui) {
+        self.imgui_glfw.prepare_render(&ui, &mut *self.window.borrow_mut());
         self.imgui_renderer.render(ui);
-
     }
 
-    fn handle_events(&mut self, imgui: &mut imgui::ImGui) {
+    fn handle_events(&mut self, imgui: &mut imgui::Context) {
         for (_, e) in self.events.try_iter() {
             self.imgui_glfw.handle_event(imgui, &e)
         }
