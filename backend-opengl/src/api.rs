@@ -1,31 +1,31 @@
-use std::{path::Path, rc::Rc, sync::mpsc::Receiver, fs};
+use std::{fs, path::Path, rc::Rc, sync::mpsc::Receiver};
 
 use backend_interface::{
-    IndexBuffer,
     Backend as InterfaceBackend,
+    BufferLayout,
+    IndexBuffer,
     RendererApi,
     RendererConstructor,
     Shader,
+    utils::ResourceListener,
     VertexArray,
     VertexBuffer,
-    BufferLayout,
-    utils::ResourceListener
 };
 
 use crate::{
-    buffer::{
-        OpenGLVertexArray,
-        OpenGLIndexBuffer,
-        OpenGLVertexBuffer
-    },
     Backend,
-    shader::OpenGLShader
+    buffer::{
+        OpenGLIndexBuffer,
+        OpenGLVertexArray,
+        OpenGLVertexBuffer,
+    },
+    shader::OpenGLShader,
 };
 use crate::shader::ReloadableOpenGLShader;
 
 pub struct OpenGLRendererConstructor {
     gl_api: Rc<gl::Gl>,
-    rl: ResourceListener
+    rl: ResourceListener,
 }
 
 impl OpenGLRendererConstructor {
@@ -52,7 +52,7 @@ impl RendererConstructor<Backend> for OpenGLRendererConstructor {
 
     #[cfg(not(feature = "hot_reload"))]
     fn shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> <Backend as InterfaceBackend>::Shader {
-                OpenGLShader::new_vert_frag(&fs::read_to_string(vertex).expect(""),
+        OpenGLShader::new_vert_frag(&fs::read_to_string(vertex).expect(""),
                                     &fs::read_to_string(fragment).expect(""),
                                     self.gl_api.clone()).expect("Error during shader creation")
     }
@@ -63,10 +63,6 @@ impl RendererConstructor<Backend> for OpenGLRendererConstructor {
             vertex.to_str().unwrap(),
             fragment.to_str().unwrap(),
         ), self.gl_api.clone())
-
-//        OpenGLShader::new_vert_frag(&fs::read_to_string(vertex).expect(""),
-//                                    &fs::read_to_string(fragment).expect(""),
-//                                    self.gl_api.clone()).expect("Error during shader creation")
     }
 }
 
@@ -77,7 +73,6 @@ pub struct OpenGLRendererApi {
 
 impl OpenGLRendererApi {
     pub fn new(gl_api: Rc<gl::Gl>, swap_buffers: Box<FnMut() -> ()>) -> OpenGLRendererApi {
-        unsafe { gl_api.Viewport(0, 0, 1200, 800); }
         OpenGLRendererApi { gl_api, swap_buffers }
     }
 }
@@ -85,6 +80,10 @@ impl OpenGLRendererApi {
 impl RendererApi<Backend> for OpenGLRendererApi {
     fn swap_buffer(&mut self) {
         (self.swap_buffers)()
+    }
+
+    fn viewport(&self, w: i32, h: i32) {
+        unsafe{ self.gl_api.Viewport(0, 0, w, h) };
     }
 
 

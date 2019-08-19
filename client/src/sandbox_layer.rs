@@ -34,12 +34,12 @@ use rx_engine::run::{EngineContext, FrameContext};
 struct TestLayer {
     va_ptr: AssetPtr<backend::VertexArray>,
     shader: AssetPtr<backend::Shader>,
-    rot: f32,
+    rot: f64,
 }
 
 impl TestLayer {
     pub fn new(ctx: &mut EngineContext) -> Self {
-        let mut path_buf = &relative_to_current_path(&vec!["client", "resources", "tetrahedron.obj"]);
+        let mut path_buf = &relative_to_current_path(&vec!["client", "resources", "cube.obj"]);
         let mut loader = Loader;
         let result = loader.load_obj(path_buf);
 
@@ -73,14 +73,29 @@ impl TestLayer {
 }
 
 impl Layer for TestLayer {
-    fn on_update(&mut self, frame: &FrameContext, ctx: &mut EngineContext) {
+    fn on_update(&mut self, frame: &mut FrameContext, ctx: &mut EngineContext) {
         use rx_engine::na::Matrix4;
         use rx_engine::glm;
 
         let identity: Matrix4<f32> = glm::identity();
-        let mtx: Matrix4<f32> = Matrix4::from_euler_angles(0f32, 0f32, self.rot);
-        self.rot += 0.001f32;
+        let proj = glm::perspective(
+            6./4.,
+            glm::radians(&glm::vec1(30.)).x,
+            0.1,
+                1000.,
+        );
+        self.rot += 0.5 * frame.elapsed;
 
+        let view: Matrix4<f32> = glm::look_at(
+            &glm::vec3(0.,0.,5.),
+            &glm::vec3(0.,0.,0.),
+            &glm::vec3(0.,1.,0.),
+        );
+        let mut mtx: Matrix4<f32> = Matrix4::from_euler_angles(0f32, self.rot as f32, 0.);
+        mtx = glm::translate(&mut mtx, &glm::vec3(0., 0., 0.));
+
+        frame.frame.set_projection_matrix(proj);
+        frame.frame.set_view_matrix(view);
 
         let ui = &frame.ui;
         ui.window(imgui::im_str!("Info"))
@@ -104,7 +119,7 @@ impl Layer for TestLayer {
             });
         let shader = ctx.asset_holder.storage().get_ref(&self.shader.clone()).unwrap();
         shader.bind();
-        shader.load_mat4("m", &mtx.as_slice());
+        shader.load_mat4("m", mtx.as_slice());
 
         ctx.renderer.submit((self.va_ptr.clone(), self.shader.clone()));
     }

@@ -28,6 +28,12 @@ pub struct WindowConfig {
     pub height: u32,
 }
 
+
+#[derive(Clone)]
+pub enum Event {
+    Resize(i32, i32)
+}
+
 pub trait ImGuiRenderer {
     fn new_frame<'im>(&mut self, imgui: &'im mut imgui::Context) -> imgui::Ui<'im>;
     fn render(&self, ui: imgui::Ui);
@@ -36,9 +42,9 @@ pub trait ImGuiRenderer {
 
 pub trait PlatformManager<B: Backend> {
     fn new(config: WindowConfig) -> B::PlatformManager;
-    fn create_renderer(&self) -> (B::RendererApi, B::RendererConstructor);
+    fn create_renderer(&mut self) -> (B::RendererApi, B::RendererConstructor);
     fn should_close(&self) -> bool;
-    fn process_events(&self);
+    fn poll_events(&self) -> Vec<Event>;
     fn current_time(&self) -> f64;
     fn current_time_ms(&self) -> f64 {
         self.current_time() * 1000f64
@@ -93,6 +99,7 @@ pub trait RendererApi<B: Backend> {
     fn draw_indexed(&self, vertex_array: &B::VertexArray);
     fn clear_color(&self);
     fn set_clear_color(&self, r: f32, g: f32, b: f32, a: f32);
+    fn viewport(&self, w: i32, h: i32);
 }
 
 impl BufferLayout {

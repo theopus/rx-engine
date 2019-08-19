@@ -5,9 +5,9 @@ pub extern crate imgui;
 pub extern crate nalgebra as na;
 pub extern crate nalgebra_glm as glm;
 ///ecs
-extern crate specs;
+pub extern crate specs;
 #[macro_use]
-extern crate specs_derive;
+pub extern crate specs_derive;
 
 //pub use backend::*;
 

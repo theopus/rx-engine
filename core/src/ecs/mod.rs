@@ -1,12 +1,15 @@
 use specs::Entities;
 use specs::Read;
 use specs::System;
+use crate::interface::Event;
 
 pub mod layer;
 
 //resources
 #[derive(Default)]
 pub struct DeltaTime(pub f64);
+#[derive(Default)]
+pub struct PlatformEvents(Vec<Event>);
 
 //components
 pub mod components {

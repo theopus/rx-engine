@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies.rx_engine]
 path = "../core"
+features = ["imgui_debug"]

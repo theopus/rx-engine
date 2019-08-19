@@ -1,22 +1,18 @@
 use std::sync::mpsc::Sender;
 
-use specs::{
-    Dispatcher,
-    System,
-    World,
-    WorldExt,
-};
+use specs::{Dispatcher, DispatcherBuilder, System, World, WorldExt};
 use specs::Join;
 use specs::Read;
 use specs::ReadStorage;
 use specs::WriteStorage;
 
 use crate::backend::{PlatformManager, RendererConstructor};
+use crate::ecs::{DeltaTime, PlatformEvents};
 use crate::ecs::components::{Position, Rotation, Transformation};
-use crate::ecs::DeltaTime;
+use crate::interface::Event;
 use crate::render::DrawIndexed;
 use crate::render::Renderer;
-use crate::run::{EngineContext, Layer, LayerBuilder, FrameContext};
+use crate::run::{EngineContext, FrameContext, Layer, LayerBuilder};
 
 pub struct EmptySystem;
 
@@ -71,38 +67,69 @@ pub struct EcsLayer<'a> {
 }
 
 impl<'a> EcsLayer<'a> {
-    pub fn new(sender: Sender<DrawIndexed>) -> Self {
+    pub fn new(sender: Sender<DrawIndexed>, init: &EcsInit<'a>) -> Self {
         let mut world: specs::World = specs::WorldExt::new();
         world.register::<Position>();
         world.register::<Rotation>();
         world.register::<Transformation>();
 
+        world.insert(DeltaTime(0f64));
+        world.insert(PlatformEvents(Vec::new()));
+
         let render_system: RenderSystem = RenderSystem::new(sender);
         let dispatcher = specs::DispatcherBuilder::new()
             .with(EmptySystem, "empty_system", &[])
             .with(TransformationSystem, "tsm_system", &[])
-            .with_thread_local(render_system)
-            .build();
-        world.insert(DeltaTime(0f64));
+            .with_thread_local(render_system);
+
+        let (world, dispatcher) = init(world, dispatcher);
+        let dispatcher = dispatcher.build();
+
 
         EcsLayer { world, dispatcher }
     }
 }
 
-pub struct EcsLayerBuilder;
 
-impl<'l> LayerBuilder<'l> for EcsLayerBuilder {
+pub type EcsInit<'a> = Box<fn(specs::World, specs::DispatcherBuilder<'a, 'a>) -> (specs::World, specs::DispatcherBuilder<'a, 'a>)>;
+
+pub struct EcsLayerBuilder<'a> {
+    ecs_builder_fn: EcsInit<'a>
+}
+
+impl<'a> EcsLayerBuilder<'a> {
+    pub fn new(ecs_builder_fn: EcsInit<'a>) -> EcsLayerBuilder<'a> {
+        EcsLayerBuilder { ecs_builder_fn }
+    }
+}
+
+impl<'a> Default for EcsLayerBuilder<'a> {
+    fn default() -> Self {
+        let f: EcsInit<'a> = Box::new(|world: specs::World, dispatcher: specs::DispatcherBuilder<'a, 'a>| {
+            return (world, dispatcher) as (specs::World, specs::DispatcherBuilder<'a, 'a>);
+        });
+        EcsLayerBuilder { ecs_builder_fn: f }
+    }
+}
+
+impl<'l> LayerBuilder<'l> for EcsLayerBuilder<'l> {
     fn build(&self, ctx: &mut EngineContext) -> Box<dyn Layer + 'l> {
-        Box::new(EcsLayer::new(ctx.renderer.get_submitter()))
+        Box::new(EcsLayer::new(ctx.renderer.get_submitter(), &self.ecs_builder_fn))
     }
 }
 
 impl<'a> Layer for EcsLayer<'a> {
-    fn on_update(&mut self, frame: &FrameContext, ctx: &mut EngineContext) {
+    fn on_update(&mut self, frame: &mut FrameContext, ctx: &mut EngineContext) {
         {
             let mut delta_resource = self.world.write_resource::<DeltaTime>();
+            let mut events_resource = self.world.write_resource::<PlatformEvents>();
+            events_resource.0.clear();
+            for e in &frame.events {
+                events_resource.0.push((*e).clone());
+            }
             *delta_resource = DeltaTime(frame.elapsed);
-            //dropping resource borrow
+
+            //dropping resources borrow
         }
 
 

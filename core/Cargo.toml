@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Oleksandr Tkachov <theopus5@gmail.com>"]
 edition = "2018"
 
+[features]
+
+imgui_debug = []
+
 [dependencies]
 tobj = "0.1.8"
 #imgui = { version = "0.1.0"}

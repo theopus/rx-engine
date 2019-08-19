@@ -11,6 +11,7 @@ use glfw::Key;
 use glfw::SwapInterval;
 
 use backend_interface::Backend as InterfaceBackend;
+use backend_interface::Event;
 use backend_interface::ImGuiRenderer;
 use backend_interface::PlatformManager;
 use backend_interface::WindowConfig;
@@ -27,6 +28,7 @@ pub struct GlfwPlatformManager {
     events: Receiver<(f64, glfw::WindowEvent)>,
     internal_events_senders: Vec<Sender<(f64, glfw::WindowEvent)>>,
 
+    gl: Option<Rc<gl::Gl>>,
 }
 
 impl PlatformManager<Backend> for GlfwPlatformManager {
@@ -56,7 +58,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
 
 
         glfw.make_context_current(Option::from(&window));
-        glfw.set_swap_interval(SwapInterval::Sync(2));
+        glfw.set_swap_interval(SwapInterval::Sync(0));
 
         use std::rc::Rc;
         window.show();
@@ -65,10 +67,11 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
             window: Rc::new(RefCell::from(window)),
             events,
             internal_events_senders: Vec::new(),
+            gl: None,
         }
     }
 
-    fn create_renderer(&self)
+    fn create_renderer(&mut self)
                        -> (<Backend as InterfaceBackend>::RendererApi, <Backend as InterfaceBackend>::RendererConstructor) {
         let gl = gl::Gl::load_with(|s| {
             self.window.borrow_mut().get_proc_address(s) as *const std::os::raw::c_void
@@ -77,6 +80,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
 
         let mut ctx = self.window.borrow_mut().render_context();
 
+        self.gl = Some(gl.clone());
         (
             OpenGLRendererApi::new(gl.clone(),
                                    Box::from(move || ctx.swap_buffers())),
@@ -88,14 +92,22 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         self.window.borrow().should_close()
     }
 
-    fn process_events(&self) {
+    fn poll_events(&self) -> Vec<Event> {
         self.glfw.borrow_mut().poll_events();
+        let mut events = Vec::new();
         for (_, event) in glfw::flush_messages(&self.events) {
+            match event {
+                glfw::WindowEvent::FramebufferSize(w, h) => { events.push(Event::Resize(w, h)) }
+                _ => {}
+            };
             for s in self.internal_events_senders.iter() {
                 s.send((0., event.clone()));
             }
-            handle_window_event(&mut self.window.borrow_mut(), event);
+            if let glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) = event {
+                self.window.borrow_mut().set_should_close(true)
+            }
         }
+        events
     }
 
     fn current_time(&self) -> f64 {
@@ -148,12 +160,5 @@ impl<'a> ImGuiRenderer for GlfwImGuiRenderer {
         for (_, e) in self.events.try_iter() {
             self.imgui_glfw.handle_event(imgui, &e)
         }
-    }
-}
-
-
-fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
-    if let glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) = event {
-        window.set_should_close(true)
     }
 }
