@@ -77,25 +77,11 @@ impl Layer for TestLayer {
         use rx_engine::na::Matrix4;
         use rx_engine::glm;
 
-        let identity: Matrix4<f32> = glm::identity();
-        let proj = glm::perspective(
-            6./4.,
-            glm::radians(&glm::vec1(30.)).x,
-            0.1,
-                1000.,
-        );
-        self.rot += 0.5 * frame.elapsed;
+        self.rot += 20. * frame.elapsed;
 
-        let view: Matrix4<f32> = glm::look_at(
-            &glm::vec3(0.,0.,5.),
-            &glm::vec3(0.,0.,0.),
-            &glm::vec3(0.,1.,0.),
-        );
-        let mut mtx: Matrix4<f32> = Matrix4::from_euler_angles(0f32, self.rot as f32, 0.);
-        mtx = glm::translate(&mut mtx, &glm::vec3(0., 0., 0.));
-
-        frame.frame.set_projection_matrix(proj);
-        frame.frame.set_view_matrix(view);
+        let mut  mtx: Matrix4<f32> = glm::identity();
+        mtx = glm::rotate(&mtx, glm::radians(&glm::vec1(self.rot as f32)).x, &glm::vec3(0., 1., 0.));
+        mtx = glm::translate(&mtx, &glm::vec3(0.,0.,0.));
 
         let ui = &frame.ui;
         ui.window(imgui::im_str!("Info"))

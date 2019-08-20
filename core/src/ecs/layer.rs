@@ -7,8 +7,8 @@ use specs::ReadStorage;
 use specs::WriteStorage;
 
 use crate::backend::{PlatformManager, RendererConstructor};
-use crate::ecs::{DeltaTime, PlatformEvents};
-use crate::ecs::components::{Position, Rotation, Transformation};
+use crate::ecs::{DeltaTime, PlatformEvents, ActiveCamera};
+use crate::ecs::components::{Position, Rotation, Transformation, Camera};
 use crate::interface::Event;
 use crate::render::DrawIndexed;
 use crate::render::Renderer;
@@ -72,9 +72,11 @@ impl<'a> EcsLayer<'a> {
         world.register::<Position>();
         world.register::<Rotation>();
         world.register::<Transformation>();
+        world.register::<Camera>();
 
         world.insert(DeltaTime(0f64));
         world.insert(PlatformEvents(Vec::new()));
+        world.insert(ActiveCamera::default());
 
         let render_system: RenderSystem = RenderSystem::new(sender);
         let dispatcher = specs::DispatcherBuilder::new()
@@ -132,7 +134,12 @@ impl<'a> Layer for EcsLayer<'a> {
             //dropping resources borrow
         }
 
-
         self.dispatcher.dispatch(&self.world);
+
+        {
+            let mut camera = self.world.read_resource::<ActiveCamera>();
+            frame.frame.set_view_matrix(camera.view_mtx);
+            frame.frame.set_projection_matrix(camera.proj_mtx);
+        }
     }
 }
