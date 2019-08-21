@@ -29,7 +29,7 @@ pub struct WindowConfig {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Event {
     Resize(i32, i32)
 }

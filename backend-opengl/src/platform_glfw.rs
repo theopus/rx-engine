@@ -57,6 +57,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         window.set_key_polling(true);
 
 
+
         glfw.make_context_current(Option::from(&window));
         glfw.set_swap_interval(SwapInterval::Sync(0));
 

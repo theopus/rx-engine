@@ -5,19 +5,30 @@ use crate::{
     },
 };
 use crate::imgui;
+use crate::interface::Event;
 use crate::run::{EngineContext, FrameContext};
 
-struct InfoLayer;
+struct InfoLayer {
+    loged_events: Vec<Event>
+}
 
 impl InfoLayer {
     pub fn new(ctx: &mut EngineContext) -> Self {
-        InfoLayer {}
+        InfoLayer { loged_events: Vec::with_capacity(10) }
     }
 }
 
 impl Layer for InfoLayer {
     fn on_update(&mut self, frame: &mut FrameContext, ctx: &mut EngineContext) {
         let ui = &frame.ui;
+
+        for e in &frame.events {
+            self.loged_events.insert(0, e.clone());
+            if self.loged_events.len() > 9 {
+                self.loged_events.remove(9);
+            }
+        }
+
         ui.window(imgui::im_str!("Info"))
             .size([300.0, 300.0], imgui::Condition::Once)
             .position([1.0, 1.0], imgui::Condition::Always)
@@ -36,6 +47,12 @@ impl Layer for InfoLayer {
                 ui.text(imgui::im_str!("{:.0} x {:.0} window", w,h));
                 ui.text(imgui::im_str!("{:.0} x {:.0} framebuffer", fw,fh));
                 ui.text(imgui::im_str!("Mouse Position: ({:.1},{:.1})", mouse_pos.0, mouse_pos.1));
+
+                ui.separator();
+                ui.text(imgui::im_str!("Events: "));
+                for e in &self.loged_events {
+                    ui.text(imgui::im_str!("{:?}", e));
+                }
             });
     }
 }

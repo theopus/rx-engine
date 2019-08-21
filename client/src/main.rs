@@ -52,18 +52,13 @@ impl<'a> rx_engine::specs::System<'a> for CameraSystem {
                     };
                 }
             }
-
             camera.view = {
                 let mut mtx: Matrix4f = glm::identity();
-
-                //targer translate
-                //target rot
                 mtx = glm::translate(&mtx, &glm::vec3(pos.x, pos.y, pos.z)); // camera translate
                 mtx = glm::rotate(&mtx, glm::radians(&glm::vec1(rot.x)).x, &glm::vec3(1., 0., 0.)); //camera rot
                 mtx = glm::rotate(&mtx, glm::radians(&glm::vec1(rot.y)).x, &glm::vec3(0., 1., 0.));
                 mtx = glm::rotate(&mtx, glm::radians(&glm::vec1(rot.z)).x, &glm::vec3(0., 0., 1.));
                 glm::inverse(&mtx)
-//                mtx
             };
             active.view_mtx = camera.view;
             active.proj_mtx = camera.projection;
@@ -142,6 +137,9 @@ fn main() {
             return (w, d);
         })),
     );
+    dbg!();
+
+
     engine.run();
     println!("Bye!")
 }
