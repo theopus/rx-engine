@@ -7,8 +7,8 @@ use specs::ReadStorage;
 use specs::WriteStorage;
 
 use crate::backend::{PlatformManager, RendererConstructor};
-use crate::ecs::{DeltaTime, PlatformEvents, ActiveCamera};
-use crate::ecs::components::{Position, Rotation, Transformation, Camera};
+use crate::ecs::{ActiveCamera, DeltaTime, PlatformEvents};
+use crate::ecs::components::{Camera, Position, Render, Rotation, Transformation};
 use crate::interface::Event;
 use crate::render::DrawIndexed;
 use crate::render::Renderer;
@@ -34,9 +34,14 @@ impl RenderSystem {
 }
 
 impl<'a, 'd> System<'a> for RenderSystem {
-    type SystemData = (ReadStorage<'a, Transformation>);
+    type SystemData = (ReadStorage<'a, Transformation>,
+                       ReadStorage<'a, Render>);
 
-    fn run(&mut self, transformation: Self::SystemData) {}
+    fn run(&mut self, (transformation, render): Self::SystemData) {
+        for (transformation, render) in (&transformation, &render).join() {
+            self.sender.send((render.va.clone(), render.shader.clone(), transformation.mtx));
+        }
+    }
 }
 
 struct TransformationSystem;
@@ -67,12 +72,13 @@ pub struct EcsLayer<'a> {
 }
 
 impl<'a> EcsLayer<'a> {
-    pub fn new(sender: Sender<DrawIndexed>, init: &EcsInit<'a>) -> Self {
+    pub fn new(sender: Sender<DrawIndexed>, init: &EcsInit<'a>, ctx: &mut EngineContext) -> Self {
         let mut world: specs::World = specs::WorldExt::new();
         world.register::<Position>();
         world.register::<Rotation>();
         world.register::<Transformation>();
         world.register::<Camera>();
+        world.register::<Render>();
 
         world.insert(DeltaTime(0f64));
         world.insert(PlatformEvents(Vec::new()));
@@ -84,7 +90,8 @@ impl<'a> EcsLayer<'a> {
             .with(TransformationSystem, "tsm_system", &[])
             .with_thread_local(render_system);
 
-        let (world, dispatcher) = init(world, dispatcher);
+        let ctx: &mut EngineContext = ctx;
+        let (world, dispatcher) = init(world, dispatcher, ctx);
         let dispatcher = dispatcher.build();
 
 
@@ -93,7 +100,7 @@ impl<'a> EcsLayer<'a> {
 }
 
 
-pub type EcsInit<'a> = Box<fn(specs::World, specs::DispatcherBuilder<'a, 'a>) -> (specs::World, specs::DispatcherBuilder<'a, 'a>)>;
+pub type EcsInit<'a> = Box<fn(specs::World, specs::DispatcherBuilder<'a, 'a>, ctx: &mut EngineContext) -> (specs::World, specs::DispatcherBuilder<'a, 'a>)>;
 
 pub struct EcsLayerBuilder<'a> {
     ecs_builder_fn: EcsInit<'a>
@@ -107,8 +114,8 @@ impl<'a> EcsLayerBuilder<'a> {
 
 impl<'a> Default for EcsLayerBuilder<'a> {
     fn default() -> Self {
-        let f: EcsInit<'a> = Box::new(|world: specs::World, dispatcher: specs::DispatcherBuilder<'a, 'a>| {
-            return (world, dispatcher) as (specs::World, specs::DispatcherBuilder<'a, 'a>);
+        let f: EcsInit<'a> = Box::new(|world, dispatcher, ctx| {
+            return (world, dispatcher);
         });
         EcsLayerBuilder { ecs_builder_fn: f }
     }
@@ -116,7 +123,10 @@ impl<'a> Default for EcsLayerBuilder<'a> {
 
 impl<'l> LayerBuilder<'l> for EcsLayerBuilder<'l> {
     fn build(&self, ctx: &mut EngineContext) -> Box<dyn Layer + 'l> {
-        Box::new(EcsLayer::new(ctx.renderer.get_submitter(), &self.ecs_builder_fn))
+        Box::new(
+            EcsLayer::new(ctx.renderer.get_submitter(),
+                          &self.ecs_builder_fn,
+                          ctx))
     }
 }
 

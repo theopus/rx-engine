@@ -9,6 +9,7 @@ pub fn build_engine(config: WindowConfig, ecs_layer: EcsLayerBuilder) -> RxEngin
     let (renderer, constructor): (backend::RendererApi, backend::RendererConstructor) = pm.create_renderer();
     let mut engine = RxEngine::new(pm, renderer, constructor);
     engine.add_layer_builder(ecs_layer);
+    engine.add_layer_builder(crate::layer::info_layer::InfoLayerBuilder);
     engine
 }
 

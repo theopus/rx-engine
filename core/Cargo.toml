@@ -5,16 +5,17 @@ authors = ["Oleksandr Tkachov <theopus5@gmail.com>"]
 edition = "2018"
 
 [features]
-
+default = ["imgui_debug"]
 imgui_debug = []
 
 [dependencies]
 tobj = "0.1.8"
-#imgui = { version = "0.1.0"}
 imgui = { version = "0.1.0"}
 
 [dependencies.specs]
 version = "0.15.0"
+default-features = false
+#features = ["parallel"]
 [dependencies.specs-derive]
 version = "0.4.0"
 [dependencies.backend-opengl]

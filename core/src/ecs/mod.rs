@@ -34,6 +34,7 @@ pub mod components {
     use na::Matrix4;
     use specs::{Component, VecStorage};
 
+
     use crate::ecs::ActiveCamera;
 
     #[derive(Component, Debug)]
@@ -99,5 +100,14 @@ pub mod components {
         fn default() -> Self {
             Camera::default_with_aspect(6. / 4.)
         }
+    }
+
+    use crate::asset::AssetPtr;
+
+    #[derive(Component)]
+    #[storage(VecStorage)]
+    pub struct Render {
+        pub va: AssetPtr<backend::VertexArray>,
+        pub shader: AssetPtr<backend::Shader>,
     }
 }

@@ -21,6 +21,8 @@ pub mod ecs;
 pub mod loader;
 pub mod asset;
 
+mod layer;
+
 pub type Matrix4f = na::Matrix4<f32>;
 //extern crate imgui;
 //extern crate imgui_opengl_renderer;

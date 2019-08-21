@@ -10,7 +10,7 @@ use interface::{
 
 pub struct AssetPtr<T> {
     id: u32,
-    pd: std::marker::PhantomData<T>,
+    pd: std::marker::PhantomData<fn() -> T>,
 }
 
 impl<T> Clone for AssetPtr<T> {
