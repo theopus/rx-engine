@@ -35,8 +35,9 @@ pub mod components {
     use na::Matrix4;
     use specs::{Component, VecStorage};
 
-
+    use crate::asset::AssetPtr;
     use crate::ecs::ActiveCamera;
+    use crate::material::MaterialInstance;
 
     #[derive(Component, Debug)]
     #[storage(VecStorage)]
@@ -102,9 +103,6 @@ pub mod components {
             Camera::default_with_aspect(6. / 4.)
         }
     }
-
-    use crate::asset::AssetPtr;
-    use crate::material::MaterialInstance;
 
     #[derive(Component)]
     #[storage(VecStorage)]

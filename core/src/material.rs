@@ -1,28 +1,28 @@
-use crate::{backend, Vec3f, Matrix4f};
-use crate::interface::Shader;
 use std::collections::HashMap;
-use crate::asset::{AssetPtr, AssetHolder, AssetStorage};
+
+use crate::{backend, Matrix4f, Vec3f};
+use crate::asset::{AssetHolder, AssetPtr, AssetStorage};
+use crate::interface::Shader;
 
 pub struct Material {
     shader: backend::Shader
 }
 
-type Upload = Box<Fn()>;
-type UploadRaw<'a> = dyn Fn(&'a backend::Shader) -> ();
-
-fn to_upload<'a, F>(f: F) -> Upload
-    where F: Fn(&'a backend::Shader) -> () + 'static {
-    Box::new(f) as Upload
-}
-
+#[derive(Clone)]
 pub struct MaterialInstance {
     material: AssetPtr<Material>,
-    uploads: HashMap<&'static str, Upload>,
+    uploads_mat4: HashMap<&'static str, Matrix4f>,
+    uploads_vec3: HashMap<&'static str, Vec3f>,
 }
+
 
 impl MaterialInstance {
     pub fn new(material: AssetPtr<Material>) -> Self {
-        MaterialInstance { material, uploads: HashMap::new() }
+        MaterialInstance {
+            material,
+            uploads_mat4: HashMap::new(),
+            uploads_vec3: HashMap::new(),
+        }
     }
 
     pub fn material(&self) -> &AssetPtr<Material> {
@@ -31,18 +31,21 @@ impl MaterialInstance {
 }
 
 impl MaterialInstance {
-        pub fn set_mat4(&mut self, placeholder: &'static str, value: &Matrix4f) {
-            let mtx: Matrix4f = glm::identity() * value;
-            self.uploads.insert(placeholder,
-                                to_upload(move |shader: &backend::Shader| {
-                                    shader.load_mat4(placeholder, mtx.as_slice());
-                                }));
+    pub fn set_mat4(&mut self, placeholder: &'static str, value: &Matrix4f) {
+        let mtx: Matrix4f = glm::identity() * value;
+        self.uploads_mat4.insert(placeholder, mtx);
+    }
+    pub fn set_vec3(&mut self, placeholder: &'static str, value: &Vec3f) {
+        self.uploads_vec3.insert(placeholder, value.clone());
     }
 
-    pub fn prepare(&self, material: & Material) {
-        let shader = material.shader();
-        for upload in self.uploads.values() {
-            upload(shader);
+    pub fn prepare(&self, material: &Material) {
+        let shader: &backend::Shader = material.shader();
+        for (p, upload) in self.uploads_mat4.iter() {
+            shader.load_mat4(p, upload.as_slice())
+        }
+        for(p, upload) in self.uploads_vec3.iter(){
+            shader.load_vec3(p, upload.as_slice())
         }
     }
 }
@@ -62,7 +65,7 @@ impl Material {
         self.shader.bind();
     }
 
-    fn shader(&self) -> &backend::Shader {
+    pub fn shader(&self) -> &backend::Shader {
         &self.shader
     }
 }

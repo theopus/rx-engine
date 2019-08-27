@@ -9,14 +9,14 @@ use specs::WriteStorage;
 use crate::backend::{PlatformManager, RendererConstructor};
 use crate::ecs::{ActiveCamera, DeltaTime, PlatformEvents};
 use crate::ecs::components::{Camera, Position, Render, Rotation, Transformation};
+use crate::ecs::system::{
+    CameraSystem,
+    TransformationSystem,
+};
 use crate::interface::Event;
 use crate::render::DrawIndexed;
 use crate::render::Renderer;
 use crate::run::{EngineContext, FrameContext, Layer, LayerBuilder};
-use crate::ecs::system::{
-    CameraSystem,
-    TransformationSystem
-};
 
 pub struct EmptySystem;
 
@@ -39,11 +39,11 @@ impl RenderSystem {
 
 impl<'a, 'd> System<'a> for RenderSystem {
     type SystemData = (ReadStorage<'a, Transformation>,
-                       ReadStorage<'a, Render>);
+                       WriteStorage<'a, Render>);
 
-    fn run(&mut self, (transformation, render): Self::SystemData) {
-        for (transformation, render) in (&transformation, &render).join() {
-            self.sender.send((render.va.clone(), render.shader.clone(), transformation.mtx));
+    fn run(&mut self, (transformation, mut render): Self::SystemData) {
+        for (transformation, mut render) in (&transformation, &mut render).join() {
+            self.sender.send((render.va.clone(), render.material.clone(), transformation.mtx));
         }
     }
 }

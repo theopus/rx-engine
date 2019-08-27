@@ -10,8 +10,9 @@ use interface::{RendererApi, Shader};
 
 use crate::asset::{AssetHolder, AssetPtr};
 use crate::Matrix4f;
+use crate::material::{MaterialInstance, Material};
 
-pub type DrawIndexed = (AssetPtr<backend::VertexArray>, AssetPtr<backend::Shader>, Matrix4f);
+pub type DrawIndexed = (AssetPtr<backend::VertexArray>, MaterialInstance, Matrix4f);
 
 pub struct Renderer {
     api: backend::RendererApi,
@@ -66,7 +67,12 @@ impl Renderer {
         for cmd in self.receiver.try_iter() {
 
             let va: &backend::VertexArray = ctx.storage().get_ref(&cmd.0).unwrap();
-            let shader: &backend::Shader = ctx.storage().get_ref(&cmd.1).unwrap();
+            let instance = cmd.1;
+            let material: &Material = ctx.storage().get_ref(instance.material()).unwrap();
+
+            material.bind();
+            instance.prepare(material);
+            let shader = material.shader();
 
             shader.bind();
             shader.load_mat4("r_view", frame.view.as_slice());

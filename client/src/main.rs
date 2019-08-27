@@ -12,8 +12,8 @@ use rx_engine::glm;
 use rx_engine::interface::{BufferLayout, Event, shared_types, VertexArray, VertexBuffer, WindowConfig};
 use rx_engine::interface::{RendererApi, RendererConstructor};
 use rx_engine::loader::Loader;
-use rx_engine::utils::relative_to_current_path;
 use rx_engine::material::{Material, MaterialInstance};
+use rx_engine::utils::relative_to_current_path;
 
 pub struct EmptySystem;
 
@@ -49,15 +49,13 @@ fn main() {
             let va_ptr: AssetPtr<backend::VertexArray> = ctx.asset_holder.storage_mut().put(vertex_array);
 
 
-
             let material: AssetPtr<Material> = ctx.asset_holder.storage_mut().put(rx_engine::material::Material::from_shader(ctx.renderer_constructor.shader(
                 &relative_to_current_path(&vec!["client", "src", "test", "vert.glsl"]),
                 &relative_to_current_path(&vec!["client", "src", "test", "frag.glsl"]),
                 &BufferLayout::with(shared_types::FLOAT_3))));
 
             let mut instance: MaterialInstance = material.instance();
-
-            instance.set_mat4("color", &glm::identity());
+            instance.set_vec3("color_r", &glm::vec3(0.5, 0.5, 0.5));
 
             w.create_entity()
                 .with(Camera::default())
@@ -89,7 +87,7 @@ fn main() {
                 })
                 .with(Render {
                     va: va_ptr.clone(),
-                    material: material,
+                    material: instance,
                 })
                 .build();
 

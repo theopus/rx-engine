@@ -84,6 +84,7 @@ pub struct BufferLayout {
 pub trait Shader {
     fn bind(&self);
     fn load_mat4(&self, name: &str, mtx: &[f32]);
+    fn load_vec3(&self, name: &str, vec: &[f32]);
     fn unbind(&self);
 }
 

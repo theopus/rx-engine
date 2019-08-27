@@ -11,6 +11,7 @@ imgui_debug = []
 [dependencies]
 tobj = "0.1.8"
 imgui = { version = "0.1.0"}
+rand = "0.7.0"
 
 [dependencies.specs]
 version = "0.15.0"

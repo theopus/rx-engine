@@ -109,6 +109,15 @@ impl Shader for OpenGLShader {
         }
     }
 
+    fn load_vec3(&self, name: &str, vec: &[f32]) {
+        unsafe {
+            let string = name.to_owned() + "\0";
+            let locaiton = self.gl.GetUniformLocation(self.id, string.as_str().as_ptr() as *const c_char);
+            self.gl.Uniform3fv(locaiton, 1,
+                                     &vec[0] as *const f32);
+        }
+    }
+
     fn unbind(&self) {
         unsafe { self.gl.UseProgram(0); }
     }
@@ -138,6 +147,12 @@ impl Shader for ReloadableOpenGLShader {
     fn load_mat4(&self, name: &str, mtx: &[f32]) {
         if let Some(s) = self.shader.borrow().as_ref() {
             s.load_mat4(name, mtx);
+        }
+    }
+
+    fn load_vec3(&self, name: &str, vec: &[f32]) {
+        if let Some(s) = self.shader.borrow().as_ref() {
+            s.load_vec3(name, vec);
         }
     }
 
