@@ -13,6 +13,7 @@ use rx_engine::interface::{BufferLayout, Event, shared_types, VertexArray, Verte
 use rx_engine::interface::{RendererApi, RendererConstructor};
 use rx_engine::loader::Loader;
 use rx_engine::utils::relative_to_current_path;
+use rx_engine::material::{Material, MaterialInstance};
 
 pub struct EmptySystem;
 
@@ -22,47 +23,6 @@ impl<'a> rx_engine::specs::System<'a> for EmptySystem {
                        WriteStorage<'a, Transformation>);
     fn run(&mut self, data: Self::SystemData) {
         println!("Im retard");
-    }
-}
-
-pub struct CameraSystem;
-
-impl<'a> rx_engine::specs::System<'a> for CameraSystem {
-    type SystemData = (ReadStorage<'a, Position>,
-                       WriteStorage<'a, Rotation>,
-                       WriteStorage<'a, Camera>,
-                       Read<'a, PlatformEvents>,
-                       Write<'a, ActiveCamera>,
-                       Read<'a, DeltaTime>,
-    );
-
-    fn run(&mut self, (pos, mut rot, mut camera, events, mut active, delta): Self::SystemData) {
-        for (pos, rot, camera) in (&pos, &mut rot, &mut camera).join() {
-            let projection: Option<Matrix4f> = None;
-
-            for e in events.0.iter() {
-                if let Event::Resize(w, h) = e {
-                    camera.projection = {
-                        glm::perspective(
-                            (*w) as f32 / (*h) as f32,
-                            glm::radians(&glm::vec1(camera.fov)).x,
-                            0.1,
-                            1000.,
-                        )
-                    };
-                }
-            }
-            camera.view = {
-                let mut mtx: Matrix4f = glm::identity();
-                mtx = glm::translate(&mtx, &glm::vec3(pos.x, pos.y, pos.z)); // camera translate
-                mtx = glm::rotate(&mtx, glm::radians(&glm::vec1(rot.x)).x, &glm::vec3(1., 0., 0.)); //camera rot
-                mtx = glm::rotate(&mtx, glm::radians(&glm::vec1(rot.y)).x, &glm::vec3(0., 1., 0.));
-                mtx = glm::rotate(&mtx, glm::radians(&glm::vec1(rot.z)).x, &glm::vec3(0., 0., 1.));
-                glm::inverse(&mtx)
-            };
-            active.view_mtx = camera.view;
-            active.proj_mtx = camera.projection;
-        }
     }
 }
 
@@ -89,15 +49,15 @@ fn main() {
             let va_ptr: AssetPtr<backend::VertexArray> = ctx.asset_holder.storage_mut().put(vertex_array);
 
 
-            let shader: backend::Shader = ctx.renderer_constructor.shader(
+
+            let material: AssetPtr<Material> = ctx.asset_holder.storage_mut().put(rx_engine::material::Material::from_shader(ctx.renderer_constructor.shader(
                 &relative_to_current_path(&vec!["client", "src", "test", "vert.glsl"]),
                 &relative_to_current_path(&vec!["client", "src", "test", "frag.glsl"]),
-                &BufferLayout::with(shared_types::FLOAT_3));
+                &BufferLayout::with(shared_types::FLOAT_3))));
 
-            let shader: AssetPtr<backend::Shader> = ctx.asset_holder.storage_mut().put(shader);
+            let mut instance: MaterialInstance = material.instance();
 
-
-            let d = d.with(CameraSystem, "camera_system", &[]);
+            instance.set_mat4("color", &glm::identity());
 
             w.create_entity()
                 .with(Camera::default())
@@ -129,7 +89,7 @@ fn main() {
                 })
                 .with(Render {
                     va: va_ptr.clone(),
-                    shader: shader.clone(),
+                    material: material,
                 })
                 .build();
 

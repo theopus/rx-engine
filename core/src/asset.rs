@@ -7,6 +7,7 @@ use interface::{
     Shader,
     VertexArray,
 };
+use crate::material::Material;
 
 pub struct AssetPtr<T> {
     id: u32,
@@ -31,6 +32,7 @@ impl<T> AssetPtr<T> {
 pub struct AssetHolder {
     vertex_array: AssetStorage<backend::VertexArray>,
     shader: AssetStorage<backend::Shader>,
+    material: AssetStorage<Material>,
 }
 
 pub trait AssetMarker {
@@ -58,6 +60,16 @@ impl AssetMarker for backend::Shader {
     }
 }
 
+impl AssetMarker for Material {
+    fn select_storage(ah: &AssetHolder) -> &AssetStorage<Self> where Self: Sized {
+        &ah.material
+    }
+
+    fn select_storage_mut(ah: &mut AssetHolder) -> &mut AssetStorage<Self> where Self: Sized {
+        &mut ah.material
+    }
+}
+
 
 impl AssetHolder {
     pub fn storage<T>(&self) -> &AssetStorage<T> where T: AssetMarker {
@@ -73,6 +85,7 @@ impl Default for AssetHolder {
         AssetHolder {
             vertex_array: Default::default(),
             shader: Default::default(),
+            material: Default::default(),
         }
     }
 }

@@ -13,6 +13,10 @@ use crate::interface::Event;
 use crate::render::DrawIndexed;
 use crate::render::Renderer;
 use crate::run::{EngineContext, FrameContext, Layer, LayerBuilder};
+use crate::ecs::system::{
+    CameraSystem,
+    TransformationSystem
+};
 
 pub struct EmptySystem;
 
@@ -44,28 +48,6 @@ impl<'a, 'd> System<'a> for RenderSystem {
     }
 }
 
-struct TransformationSystem;
-
-
-impl<'a> System<'a> for TransformationSystem {
-    type SystemData = (ReadStorage<'a, Position>,
-                       ReadStorage<'a, Rotation>,
-                       WriteStorage<'a, Transformation>);
-
-    fn run(&mut self, (pos, rot, mut tsm): Self::SystemData) {
-        for (pos, rot, tsm) in (&pos, &rot, &mut tsm).join() {
-            tsm.mtx = {
-                let mut mtx = glm::identity();
-                glm::rotate(&mut mtx, rot.x, &glm::vec3(1., 0., 0.)) *
-                    glm::rotate(&mut mtx, rot.y, &glm::vec3(0., 1., 0.)) *
-                    glm::rotate(&mut mtx, rot.z, &glm::vec3(0., 0., 1.)) *
-                    glm::translate(&mut mtx, &glm::vec3(pos.x, pos.y, pos.z))
-            };
-        }
-    }
-}
-
-
 pub struct EcsLayer<'a> {
     world: specs::World,
     dispatcher: specs::Dispatcher<'a, 'a>,
@@ -88,6 +70,7 @@ impl<'a> EcsLayer<'a> {
         let dispatcher = specs::DispatcherBuilder::new()
             .with(EmptySystem, "empty_system", &[])
             .with(TransformationSystem, "tsm_system", &[])
+            .with(CameraSystem, "camera_system", &[])
             .with_thread_local(render_system);
 
         let ctx: &mut EngineContext = ctx;

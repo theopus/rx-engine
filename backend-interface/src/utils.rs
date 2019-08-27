@@ -6,16 +6,16 @@ use std::{
     thread,
     path::{
         Path,
-        PathBuf
+        PathBuf,
     },
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
         mpsc,
-        mpsc::{Receiver, Sender}
+        mpsc::{Receiver, Sender},
     },
     thread::JoinHandle,
-    time::{Duration, SystemTime}
+    time::{Duration, SystemTime},
 };
 
 pub struct ResourceListener {
@@ -95,7 +95,11 @@ impl ResourceListener {
     pub fn listen_pair(&self, first_file: &str, second_file: &str) -> Receiver<(String, String)> {
         let (sender, receiver) = mpsc::channel();
 
-        println!("Adding {} and {} to listener.", first_file, second_file);
+        println!(
+            "Adding pair to listener:
+            1. {}
+            2. {}",
+            first_file, second_file);
         self.pair_register.as_ref().unwrap()
             .send((sender, String::from(first_file), String::from(second_file)));
 

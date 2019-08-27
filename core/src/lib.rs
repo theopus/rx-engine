@@ -13,6 +13,7 @@ pub extern crate specs_derive;
 
 //pub mod backend;
 pub mod render;
+pub mod material;
 
 ///internal
 pub mod run;
@@ -24,6 +25,5 @@ pub mod asset;
 mod layer;
 
 pub type Matrix4f = na::Matrix4<f32>;
-//extern crate imgui;
-//extern crate imgui_opengl_renderer;
+pub type Vec3f = na::Vector3<f32>;
 

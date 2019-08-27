@@ -7,6 +7,7 @@ use crate::interface::Event;
 use crate::Matrix4f;
 
 pub mod layer;
+mod system;
 
 //resources
 #[derive(Default)]
@@ -103,11 +104,12 @@ pub mod components {
     }
 
     use crate::asset::AssetPtr;
+    use crate::material::MaterialInstance;
 
     #[derive(Component)]
     #[storage(VecStorage)]
     pub struct Render {
         pub va: AssetPtr<backend::VertexArray>,
-        pub shader: AssetPtr<backend::Shader>,
+        pub material: MaterialInstance,
     }
 }
