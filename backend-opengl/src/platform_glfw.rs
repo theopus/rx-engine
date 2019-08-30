@@ -57,7 +57,6 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         window.set_key_polling(true);
 
 
-
         glfw.make_context_current(Option::from(&window));
         glfw.set_swap_interval(SwapInterval::Sync(0));
 
@@ -97,10 +96,29 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         self.glfw.borrow_mut().poll_events();
         let mut events = Vec::new();
         for (_, event) in glfw::flush_messages(&self.events) {
-            match event {
-                glfw::WindowEvent::FramebufferSize(w, h) => { events.push(Event::Resize(w, h)) }
-                _ => {}
+            //mapping
+            let e = match event {
+                glfw::WindowEvent::FramebufferSize(w, h) => Event::Resize(w, h),
+                glfw::WindowEvent::Key(key, code, action, modfifer) => {
+                    match action {
+                        glfw::Action::Release => Event::Key(code as u32, interface::Action::Release),
+                        glfw::Action::Press => Event::Key(code as u32, interface::Action::Press),
+                        glfw::Action::Repeat => Event::Key(code as u32, interface::Action::Repeat),
+                    }
+                }
+                _ => {
+                    Event::Unhandled
+                }
             };
+
+            if let Event::Unhandled = e {
+
+            } else {
+                events.push(e);
+            }
+
+
+
             for s in self.internal_events_senders.iter() {
                 s.send((0., event.clone()));
             }

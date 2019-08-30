@@ -7,7 +7,7 @@ use specs::ReadStorage;
 use specs::WriteStorage;
 
 use crate::backend::{PlatformManager, RendererConstructor};
-use crate::ecs::{ActiveCamera, DeltaTime, PlatformEvents};
+use crate::ecs::{ActiveCamera, DeltaTime, InputEventsRead, InputEventsWrite, PlatformEvents};
 use crate::ecs::components::{Camera, Position, Render, Rotation, Transformation};
 use crate::ecs::system::{
     CameraSystem,
@@ -64,6 +64,8 @@ impl<'a> EcsLayer<'a> {
 
         world.insert(DeltaTime(0f64));
         world.insert(PlatformEvents(Vec::new()));
+        world.insert(InputEventsRead(Vec::new()));
+        world.insert(InputEventsWrite(Vec::new()));
         world.insert(ActiveCamera::default());
 
         let render_system: RenderSystem = RenderSystem::new(sender);
@@ -118,13 +120,17 @@ impl<'a> Layer for EcsLayer<'a> {
         {
             let mut delta_resource = self.world.write_resource::<DeltaTime>();
             let mut events_resource = self.world.write_resource::<PlatformEvents>();
+
             events_resource.0.clear();
             for e in &frame.events {
                 events_resource.0.push((*e).clone());
             }
             *delta_resource = DeltaTime(frame.elapsed);
 
-            //dropping resources borrow
+            let mut write_e = self.world.write_resource::<InputEventsWrite>();
+            let mut read_e = self.world.write_resource::<InputEventsRead>();
+            read_e.0.clear();
+            read_e.0.append(&mut write_e.0);
         }
 
         self.dispatcher.dispatch(&self.world);

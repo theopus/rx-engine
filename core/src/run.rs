@@ -94,8 +94,8 @@ impl<'l> RxEngine<'l> {
             };
 
             for e in &frame.events {
-                match e {
-                    Event::Resize(w, h) => self.ctx.renderer.viewport(*w, *h)
+                if let Event::Resize(w, h) = e {
+                    self.ctx.renderer.viewport(*w, *h)
                 }
             }
 

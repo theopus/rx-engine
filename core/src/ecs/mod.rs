@@ -3,7 +3,7 @@ use specs::Read;
 use specs::System;
 
 use crate::ecs::components::Camera;
-use crate::interface::Event;
+use crate::interface;
 use crate::Matrix4f;
 
 pub mod layer;
@@ -14,7 +14,23 @@ mod system;
 pub struct DeltaTime(pub f64);
 
 #[derive(Default)]
-pub struct PlatformEvents(pub Vec<Event>);
+pub struct PlatformEvents(pub Vec<interface::Event>);
+
+#[derive(Default)]
+pub struct InputEventsWrite(pub Vec<InputEvent>);
+#[derive(Default)]
+pub struct InputEventsRead(pub Vec<InputEvent>);
+
+#[derive(Clone, Debug)]
+pub enum InputEvent {
+    Up,
+    Down,
+    Left,
+    Right,
+    Forward,
+    Backward,
+    None,
+}
 
 pub struct ActiveCamera {
     pub view_mtx: Matrix4f,

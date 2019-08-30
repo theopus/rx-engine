@@ -9,7 +9,6 @@ use std::sync::mpsc::Receiver;
 
 use self::shared_types::TypeInfo;
 
-
 pub mod utils;
 
 pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send + Sync {
@@ -29,9 +28,20 @@ pub struct WindowConfig {
 }
 
 
+pub type Code = u32;
+
+#[derive(Clone, Debug)]
+pub enum Action {
+    Press,
+    Release,
+    Repeat
+}
+
 #[derive(Clone, Debug)]
 pub enum Event {
-    Resize(i32, i32)
+    Resize(i32, i32),
+    Key(Code, Action),
+    Unhandled
 }
 
 pub trait ImGuiRenderer {

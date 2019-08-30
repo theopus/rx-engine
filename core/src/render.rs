@@ -74,7 +74,6 @@ impl Renderer {
             instance.prepare(material);
             let shader = material.shader();
 
-            shader.bind();
             shader.load_mat4("r_view", frame.view.as_slice());
             shader.load_mat4("r_projection", frame.projection.as_slice());
             shader.load_mat4("r_vp", (frame.projection * frame.view).as_slice());
