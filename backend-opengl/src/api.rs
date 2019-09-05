@@ -66,8 +66,12 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
         ), self.gl_api.clone())
     }
 
-    fn buffer(&self) -> <Backend as InterfaceBackend>::Buffer {
-        buffer::OpenGlBuffer::new(&self.gl_api)
+    fn create_buffer(&self, desc: interface::BufferDescriptor) -> <Backend as InterfaceBackend>::Buffer {
+        buffer::OpenGlBuffer::new(&self.gl_api, desc)
+    }
+
+    fn buffer_mapper(&self, buffer: &<Backend as InterfaceBackend>::Buffer) -> <Backend as InterfaceBackend>::BufferMapper {
+        buffer::OpenGlBuffer::mapper(self.gl_api.clone(), buffer)
     }
 }
 

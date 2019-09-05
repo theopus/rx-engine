@@ -9,7 +9,7 @@ use rx_engine::ecs::{ActiveCamera, DeltaTime, InputEvent, InputEventsRead, Input
 use rx_engine::ecs::components::{Camera, Position, Render, Rotation, Transformation, Velocity};
 use rx_engine::ecs::layer::EcsLayerBuilder;
 use rx_engine::glm;
-use rx_engine::interface::{Action, BufferLayout, Event, shared_types, VertexArray, VertexBuffer, WindowConfig};
+use rx_engine::interface::{Action, BufferLayout, BufferMapper, Event, shared_types, VertexArray, VertexBuffer, WindowConfig};
 use rx_engine::interface::{RendererApi, RendererDevice};
 use rx_engine::loader::Loader;
 use rx_engine::material::{Material, MaterialInstance};
@@ -111,14 +111,57 @@ fn main() {
             let result = loader.load_obj(path_buf);
 
             {
-                let buffer = ctx.renderer_device.buffer();
+                let static_mesh_buffer = ctx.renderer_device.create_buffer(rx_engine::interface::BufferDescriptor {
+                    size: 1024,
+                    usage: rx_engine::interface::Usage::Vertex,
+                });
+
+                let mapper = ctx.renderer_device.buffer_mapper(&static_mesh_buffer);
+
+                struct Vertex {
+                    position: [f32; 3],
+                    uv: [f32; 2],
+                    normal: [f32; 3],
+                }
+
+                impl Vertex {
+                    pub fn from_pos_norm(positions: &Vec<f32>, normals: &Vec<f32>) -> Vec<Vertex> {
+                        assert_eq!(positions.len(), normals.len(), "different size of positions and normals");
+                        positions
+                            .chunks_exact(3)
+                            .zip(normals.chunks_exact(3))
+                            .map(|(p, n): (&[f32], &[f32])| {
+                                let p = p.to_vec();
+                                let n = n.to_vec();
+                                Vertex {
+                                    position: [
+                                        *(p.get(0).unwrap()),
+                                        *(p.get(1).unwrap()),
+                                        *(p.get(2).unwrap()),
+                                    ],
+                                    uv: [0., 0.],
+                                    normal: [
+                                        *(n.get(0).unwrap()),
+                                        *(n.get(1).unwrap()),
+                                        *(n.get(2).unwrap()),
+                                    ],
+                                }
+                            }).collect::<Vec<Vertex>>()
+                    }
+                };
+                let vertexes = Vertex::from_pos_norm(&result.positions, &result.normals);
+
+                mapper.write_slice::<Vertex>(vertexes.as_slice());
+                println!("{:?}", std::mem::size_of::<Vertex>());
+                let ve = mapper.read(std::mem::size_of::<Vertex>() * vertexes.len() / std::mem::size_of::<f32>());
+                println!("{:?}", ve);
             }
 
             let mut vertex_array: backend::VertexArray = ctx.renderer_device.vertex_array();
             let mut ib = ctx.renderer_device.index_buffer(&result.indices);
             let mut buffer = ctx.renderer_device.vertex_buffer();
 
-            let uploader = rx_engine::mesh::MeshUploader{};
+            let uploader = rx_engine::mesh::MeshUploader {};
 
             vertex_array.set_index_buffer(ib);
             buffer.buffer_data_f32(&result.positions);

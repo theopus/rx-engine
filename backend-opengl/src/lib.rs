@@ -55,4 +55,5 @@ impl backend_interface::Backend for Backend {
     type PlatformManager = platform_glfw::GlfwPlatformManager;
     type ImGuiRenderer = platform_glfw::GlfwImGuiRenderer;
     type Buffer = buffer::OpenGlBuffer;
+    type BufferMapper = buffer::OpenGlBufferMapper;
 }

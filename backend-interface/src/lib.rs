@@ -23,6 +23,14 @@ pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send
     type ImGuiRenderer: ImGuiRenderer;
     //
     type Buffer;
+    type BufferMapper: BufferMapper<Self> + Drop;
+}
+
+
+
+pub trait BufferMapper<B: Backend> {
+    fn write_slice<T>(&self, data: &[T]);
+    fn read(&self, count: usize) -> Vec<f32>;
 }
 
 pub struct WindowConfig {
@@ -101,13 +109,24 @@ pub trait Shader {
     fn unbind(&self);
 }
 
+pub struct BufferDescriptor {
+    pub size: u32,
+    pub usage: Usage
+}
+
+pub enum Usage {
+    Vertex,
+    Index,
+}
 
 pub trait RendererDevice<B: Backend> {
     fn vertex_array(&self) -> B::VertexArray;
     fn vertex_buffer(&self) -> B::VertexBuffer;
     fn index_buffer(&self, indexes: &[u32]) -> B::IndexBuffer;
     fn shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> B::Shader;
-    fn buffer(&self) -> B::Buffer;
+
+    fn create_buffer(&self, desc: BufferDescriptor) -> B::Buffer;
+    fn buffer_mapper(&self, buffer: &B::Buffer) -> B::BufferMapper;
 }
 
 pub trait RendererApi<B: Backend> {
