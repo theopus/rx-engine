@@ -6,6 +6,7 @@ pub extern crate nalgebra as na;
 pub extern crate nalgebra_glm as glm;
 ///ecs
 pub extern crate specs;
+pub extern crate rand;
 #[macro_use]
 pub extern crate specs_derive;
 
@@ -21,6 +22,7 @@ pub mod utils;
 pub mod ecs;
 pub mod loader;
 pub mod asset;
+pub mod mesh;
 
 mod layer;
 

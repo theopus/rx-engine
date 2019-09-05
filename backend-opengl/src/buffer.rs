@@ -3,10 +3,12 @@ use std::{
     os::raw::c_void,
     rc::Rc,
 };
-use crate::Backend;
-use backend_interface::shared_types::Type;
+
 use backend_interface::Backend as InterfaceBackend;
-use crate::interface::{IndexBuffer, BufferLayout, VertexBuffer, VertexArray};
+use backend_interface::shared_types::Type;
+
+use crate::Backend;
+use crate::interface::{BufferLayout, IndexBuffer, VertexArray, VertexBuffer};
 
 pub struct GLBuffer {
     id: u32,
@@ -247,6 +249,20 @@ impl VertexArray<Backend> for OpenGLVertexArray {
 
     fn unbind(&self) {
         unsafe { self.gl.BindVertexArray(0) }
+    }
+}
+
+pub struct OpenGlBuffer {
+    id: u32
+}
+
+impl OpenGlBuffer {
+    pub fn new(gl: &gl::Gl) -> OpenGlBuffer {
+        unsafe {
+            let mut id: gl::types::GLuint = 0;
+            gl.GenBuffers(1, &mut id);
+            OpenGlBuffer { id }
+        }
     }
 }
 

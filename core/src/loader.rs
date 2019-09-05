@@ -30,6 +30,8 @@ impl Loader {
         let mesh: &Mesh = &models[0].mesh;
 
         println!("# of vertexes {}", mesh.positions.len() / 3);
+        println!("# of texcoords {}", mesh.texcoords.len() / 2);
+        println!("# of normals {}", mesh.normals.len() / 3);
         println!("# of indexes {}", mesh.indices.len());
         LoadResult {
             positions: mesh.positions.clone(),

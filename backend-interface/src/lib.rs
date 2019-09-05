@@ -11,15 +11,18 @@ use self::shared_types::TypeInfo;
 
 pub mod utils;
 
+
 pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send + Sync {
     type VertexArray: VertexArray<Self>;
     type VertexBuffer: VertexBuffer<Self>;
     type IndexBuffer: IndexBuffer<Self>;
     type Shader: Shader;
     type RendererApi: RendererApi<Self>;
-    type RendererConstructor: RendererConstructor<Self>;
+    type RendererDevice: RendererDevice<Self>;
     type PlatformManager: PlatformManager<Self>;
     type ImGuiRenderer: ImGuiRenderer;
+    //
+    type Buffer;
 }
 
 pub struct WindowConfig {
@@ -34,14 +37,14 @@ pub type Code = u32;
 pub enum Action {
     Press,
     Release,
-    Repeat
+    Repeat,
 }
 
 #[derive(Clone, Debug)]
 pub enum Event {
     Resize(i32, i32),
     Key(Code, Action),
-    Unhandled
+    Unhandled,
 }
 
 pub trait ImGuiRenderer {
@@ -52,7 +55,7 @@ pub trait ImGuiRenderer {
 
 pub trait PlatformManager<B: Backend> {
     fn new(config: WindowConfig) -> B::PlatformManager;
-    fn create_renderer(&mut self) -> (B::RendererApi, B::RendererConstructor);
+    fn create_renderer(&mut self) -> (B::RendererApi, B::RendererDevice);
     fn should_close(&self) -> bool;
     fn poll_events(&self) -> Vec<Event>;
     fn current_time(&self) -> f64;
@@ -98,11 +101,13 @@ pub trait Shader {
     fn unbind(&self);
 }
 
-pub trait RendererConstructor<B: Backend> {
+
+pub trait RendererDevice<B: Backend> {
     fn vertex_array(&self) -> B::VertexArray;
     fn vertex_buffer(&self) -> B::VertexBuffer;
     fn index_buffer(&self, indexes: &[u32]) -> B::IndexBuffer;
     fn shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> B::Shader;
+    fn buffer(&self) -> B::Buffer;
 }
 
 pub trait RendererApi<B: Backend> {

@@ -1,4 +1,4 @@
-use interface::{Event, ImGuiRenderer, PlatformManager, RendererApi, RendererConstructor, WindowConfig};
+use interface::{Event, ImGuiRenderer, PlatformManager, RendererApi, RendererDevice, WindowConfig};
 
 use crate::asset::AssetHolder;
 use crate::ecs::layer::EcsLayerBuilder;
@@ -6,8 +6,8 @@ use crate::render::{Frame, Renderer};
 
 pub fn build_engine(config: WindowConfig, ecs_layer: EcsLayerBuilder) -> RxEngine {
     let mut pm: backend::PlatformManager = backend::PlatformManager::new(config);
-    let (renderer, constructor): (backend::RendererApi, backend::RendererConstructor) = pm.create_renderer();
-    let mut engine = RxEngine::new(pm, renderer, constructor);
+    let (renderer, device): (backend::RendererApi, backend::RendererDevice) = pm.create_renderer();
+    let mut engine = RxEngine::new(pm, renderer, device);
     engine.add_layer_builder(ecs_layer);
     engine.add_layer_builder(crate::layer::info_layer::InfoLayerBuilder);
     engine
@@ -24,10 +24,11 @@ pub struct RxEngine<'l> {
 pub struct EngineContext {
     pub renderer: Renderer,
     pub platform: backend::PlatformManager,
-    pub renderer_constructor: backend::RendererConstructor,
+    pub renderer_device: backend::RendererDevice,
     pub asset_holder: AssetHolder,
 }
 
+//TODO: TickContext;
 #[cfg(feature = "imgui_debug")]
 pub struct FrameContext<'f> {
     pub elapsed: f64,
@@ -37,6 +38,7 @@ pub struct FrameContext<'f> {
     pub ui: imgui::Ui<'f>,
 }
 
+//TODO: TickContext;
 #[cfg(not(feature = "imgui_debug"))]
 pub struct FrameContext {
     pub elapsed: f64,
@@ -54,7 +56,7 @@ impl<'l> RxEngine<'l> {
     pub fn new(
         mut platform: backend::PlatformManager,
         render_api: backend::RendererApi,
-        renderer_constructor: backend::RendererConstructor,
+        renderer_device: backend::RendererDevice,
     ) -> RxEngine<'l> {
         #[cfg(feature = "imgui_debug")]
             let mut imgui = imgui::Context::init();
@@ -66,7 +68,7 @@ impl<'l> RxEngine<'l> {
             ctx: EngineContext {
                 platform,
                 renderer: Renderer::new(render_api),
-                renderer_constructor,
+                renderer_device,
                 asset_holder: Default::default(),
             },
             #[cfg(feature = "imgui_debug")]

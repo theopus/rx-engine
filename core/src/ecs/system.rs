@@ -1,27 +1,27 @@
 use specs::{
-    Join,
     Dispatcher,
     DispatcherBuilder,
+    Join,
+    Read,
+    ReadStorage,
     System,
     World,
     WorldExt,
-    Read,
-    ReadStorage,
     Write,
-    WriteStorage
+    WriteStorage,
 };
 
 use crate::{
     ecs::{
         ActiveCamera,
+        components::{Camera, Position, Rotation},
         DeltaTime,
         PlatformEvents,
-        components::{Camera, Position, Rotation}
     },
     interface::Event,
-    Matrix4f
+    Matrix4f,
 };
-use crate::ecs::components::Transformation;
+use crate::ecs::components::{Transformation, Velocity};
 
 pub struct CameraSystem;
 
@@ -63,6 +63,7 @@ impl<'a> specs::System<'a> for CameraSystem {
         }
     }
 }
+
 pub struct TransformationSystem;
 
 
@@ -83,3 +84,22 @@ impl<'a> System<'a> for TransformationSystem {
         }
     }
 }
+
+pub struct MoveSystem;
+
+impl<'a> System<'a> for MoveSystem {
+    type SystemData = (WriteStorage<'a, Position>,
+                       WriteStorage<'a, Velocity>,
+                       Read<'a, DeltaTime>);
+
+    fn run(&mut self, (mut pos, mut vel, delta): Self::SystemData) {
+        let slow_rate = 1.0;
+
+        for (pos, vel) in (&mut pos, &mut vel).join() {
+            pos.x += (vel.x as f64 * delta.0) as f32;
+            pos.y += (vel.y as f64 * delta.0) as f32;
+            pos.z += (vel.z as f64 * delta.0) as f32;
+        }
+    }
+}
+

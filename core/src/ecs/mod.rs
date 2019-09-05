@@ -23,13 +23,19 @@ pub struct InputEventsRead(pub Vec<InputEvent>);
 
 #[derive(Clone, Debug)]
 pub enum InputEvent {
-    Up,
-    Down,
-    Left,
-    Right,
-    Forward,
-    Backward,
+    Up(InputType),
+    Down(InputType),
+    Left(InputType),
+    Right(InputType),
+    Forward(InputType),
+    Backward(InputType),
     None,
+}
+
+#[derive(Clone, Debug)]
+pub enum InputType {
+    Begin,
+    End,None
 }
 
 pub struct ActiveCamera {

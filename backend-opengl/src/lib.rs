@@ -28,7 +28,7 @@ pub use shader::{
 };
 pub use api::{
     OpenGLRendererApi as RendererApi,
-    OpenGLRendererConstructor as RendererConstructor
+    OpenGLRendererDevice as RendererDevice
 };
 
 pub use platform_glfw::{
@@ -50,8 +50,9 @@ impl backend_interface::Backend for Backend {
     type Shader = shader::ReloadableOpenGLShader;
 
     type RendererApi = api::OpenGLRendererApi;
-    type RendererConstructor = api::OpenGLRendererConstructor;
+    type RendererDevice = api::OpenGLRendererDevice;
 
     type PlatformManager = platform_glfw::GlfwPlatformManager;
     type ImGuiRenderer = platform_glfw::GlfwImGuiRenderer;
+    type Buffer = buffer::OpenGlBuffer;
 }

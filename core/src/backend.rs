@@ -7,7 +7,7 @@ pub type VertexBuffer = <backend::Backend as interface::Backend>::VertexBuffer;
 pub type IndexBuffer = <backend::Backend as interface::Backend>::IndexBuffer;
 pub type Shader = <backend::Backend as interface::Backend>::Shader;
 pub type RendererApi = <backend::Backend as interface::Backend>::RendererApi;
-pub type RendererConstructor = <backend::Backend as interface::Backend>::RendererConstructor;
+pub type RendererDevice = <backend::Backend as interface::Backend>::RendererDevice;
 pub type PlatformManager = <backend::Backend as interface::Backend>::PlatformManager;
 
 

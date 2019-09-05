@@ -5,7 +5,7 @@ use backend_interface::{
     BufferLayout,
     IndexBuffer,
     RendererApi,
-    RendererConstructor,
+    RendererDevice,
     Shader,
     utils::ResourceListener,
     VertexArray,
@@ -14,6 +14,7 @@ use backend_interface::{
 
 use crate::{
     Backend,
+    buffer,
     buffer::{
         OpenGLIndexBuffer,
         OpenGLVertexArray,
@@ -23,20 +24,20 @@ use crate::{
 };
 use crate::shader::ReloadableOpenGLShader;
 
-pub struct OpenGLRendererConstructor {
+pub struct OpenGLRendererDevice {
     gl_api: Rc<gl::Gl>,
     rl: ResourceListener,
 }
 
-impl OpenGLRendererConstructor {
+impl OpenGLRendererDevice {
     pub fn new(gl_api: Rc<gl::Gl>) -> Self {
         let mut listener = ResourceListener::new();
         listener.start();
-        OpenGLRendererConstructor { gl_api, rl: listener }
+        OpenGLRendererDevice { gl_api, rl: listener }
     }
 }
 
-impl RendererConstructor<Backend> for OpenGLRendererConstructor {
+impl RendererDevice<Backend> for OpenGLRendererDevice {
     fn vertex_array(&self) -> <Backend as InterfaceBackend>::VertexArray {
         OpenGLVertexArray::new(self.gl_api.clone())
     }
@@ -64,6 +65,10 @@ impl RendererConstructor<Backend> for OpenGLRendererConstructor {
             fragment.to_str().unwrap(),
         ), self.gl_api.clone())
     }
+
+    fn buffer(&self) -> <Backend as InterfaceBackend>::Buffer {
+        buffer::OpenGlBuffer::new(&self.gl_api)
+    }
 }
 
 pub struct OpenGLRendererApi {
@@ -83,7 +88,7 @@ impl RendererApi<Backend> for OpenGLRendererApi {
     }
 
     fn viewport(&self, w: i32, h: i32) {
-        unsafe{ self.gl_api.Viewport(0, 0, w, h) };
+        unsafe { self.gl_api.Viewport(0, 0, w, h) };
     }
 
 

@@ -6,13 +6,10 @@ use specs::Read;
 use specs::ReadStorage;
 use specs::WriteStorage;
 
-use crate::backend::{PlatformManager, RendererConstructor};
+use crate::backend::{PlatformManager, RendererDevice};
 use crate::ecs::{ActiveCamera, DeltaTime, InputEventsRead, InputEventsWrite, PlatformEvents};
-use crate::ecs::components::{Camera, Position, Render, Rotation, Transformation};
-use crate::ecs::system::{
-    CameraSystem,
-    TransformationSystem,
-};
+use crate::ecs::components::{Camera, Position, Render, Rotation, Transformation, Velocity};
+use crate::ecs::system::{CameraSystem, MoveSystem, TransformationSystem};
 use crate::interface::Event;
 use crate::render::DrawIndexed;
 use crate::render::Renderer;
@@ -61,6 +58,7 @@ impl<'a> EcsLayer<'a> {
         world.register::<Transformation>();
         world.register::<Camera>();
         world.register::<Render>();
+        world.register::<Velocity>();
 
         world.insert(DeltaTime(0f64));
         world.insert(PlatformEvents(Vec::new()));
@@ -72,6 +70,7 @@ impl<'a> EcsLayer<'a> {
         let dispatcher = specs::DispatcherBuilder::new()
             .with(EmptySystem, "empty_system", &[])
             .with(TransformationSystem, "tsm_system", &[])
+            .with(MoveSystem, "move_system", &[])
             .with(CameraSystem, "camera_system", &[])
             .with_thread_local(render_system);
 

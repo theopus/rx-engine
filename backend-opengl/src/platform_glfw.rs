@@ -17,7 +17,7 @@ use backend_interface::PlatformManager;
 use backend_interface::WindowConfig;
 
 use crate::api::OpenGLRendererApi;
-use crate::api::OpenGLRendererConstructor;
+use crate::api::OpenGLRendererDevice;
 use crate::Backend;
 use crate::imgui_glfw as imgui_glfw_rs;
 use crate::imgui_glfw_render as imgui_opengl_renderer;
@@ -72,7 +72,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
     }
 
     fn create_renderer(&mut self)
-                       -> (<Backend as InterfaceBackend>::RendererApi, <Backend as InterfaceBackend>::RendererConstructor) {
+                       -> (<Backend as InterfaceBackend>::RendererApi, <Backend as InterfaceBackend>::RendererDevice) {
         let gl = gl::Gl::load_with(|s| {
             self.window.borrow_mut().get_proc_address(s) as *const std::os::raw::c_void
         });
@@ -84,7 +84,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         (
             OpenGLRendererApi::new(gl.clone(),
                                    Box::from(move || ctx.swap_buffers())),
-            OpenGLRendererConstructor::new(gl.clone())
+            OpenGLRendererDevice::new(gl.clone())
         )
     }
 
