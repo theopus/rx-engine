@@ -43,5 +43,38 @@ Vertex {
             uniform LigthType3 ligth_3[n_light]
          }
 }
+```
+api
+
+```
+
+let cmd_buffer = device.create_comand_buffer();
+let render_pass = device.create_render_pass(RenderPassDesc {
+    attachemets_info(color, stencil, etc)
+})
+device.create_framebuffer(render_pass?, dimensions)
+let pipeline = device.create_pipeline(PipelineDesc {
+    buffer_binding_desc + attribs_desc + buffer,
+    shaders_set, pipeline_layout(uniforms)
+    blending_info,
+    primitives_to_use(triangles, fan, etc)
+})
+
+cmd_buffer.viewport(dimensions)
+cmd_buffer.prepare_pipeline(pipeline)
+cmd_buffer.bind_vertex_buffer(0, vb)
+cmd_buffer.bind_index_buffer(ib)
+
+let shit = cmd_buffer.prepare_render_pass(rende_pass, framebuffer, viewport, clear_optional)
+
+shit.draw* (instanced)
+shit.draw_indexed* (instanced)
+shit.draw_base_vertex (instanced
+shit.draw_indexed_base_vertex (instanced)
+cmd_buffer.finish()
+
+device.submit(cmd_buffer)
+
+
 
 ```

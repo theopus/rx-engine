@@ -2,19 +2,39 @@ extern crate rx_engine;
 
 use specs::{Builder, Join, Read, ReadStorage, WorldExt, Write, WriteStorage};
 
-use rx_engine::{Matrix4f, specs};
-use rx_engine::asset::AssetPtr;
-use rx_engine::backend;
-use rx_engine::ecs::{ActiveCamera, DeltaTime, InputEvent, InputEventsRead, InputEventsWrite, InputType, PlatformEvents};
-use rx_engine::ecs::components::{Camera, Position, Render, Rotation, Transformation, Velocity};
-use rx_engine::ecs::layer::EcsLayerBuilder;
-use rx_engine::glm;
-use rx_engine::interface::{Action, BufferLayout, BufferMapper, Event, shared_types, VertexArray, VertexBuffer, WindowConfig};
-use rx_engine::interface::{RendererApi, RendererDevice};
-use rx_engine::loader::Loader;
-use rx_engine::material::{Material, MaterialInstance};
-use rx_engine::rand::{Rng, RngCore};
-use rx_engine::utils::relative_to_current_path;
+use rx_engine::{
+    asset::AssetPtr,
+    backend,
+    ecs::{
+        ActiveCamera,
+        components::{Camera, Position, Render, Rotation, Transformation, Velocity},
+        DeltaTime,
+        InputEvent,
+        InputEventsRead,
+        InputEventsWrite,
+        InputType,
+        layer::EcsLayerBuilder,
+        PlatformEvents,
+    },
+    glm,
+    interface::{
+        Action,
+        BufferLayout,
+        Event,
+        RendererApi,
+        RendererDevice,
+        shared_types,
+        VertexArray,
+        VertexBuffer,
+        WindowConfig,
+    },
+    loader::Loader,
+    material::{Material, MaterialInstance},
+    Matrix4f,
+    rand::{Rng, RngCore},
+    specs,
+    utils::relative_to_current_path,
+};
 
 pub struct EmptySystem;
 
@@ -52,7 +72,7 @@ impl<'a> rx_engine::specs::System<'a> for CameraMoveSystem {
             }
         }
 
-
+        use rx_engine::specs::Join;
         for (cam, mut pos, mut vel) in (&cam, &mut pos, &mut vel).join() {
             for e in &input.0 {
                 match e {
@@ -103,7 +123,7 @@ impl<'a> rx_engine::specs::System<'a> for ControlsSystem {
 }
 
 fn main() {
-    let mut engine = rx_engine::run::build_engine(
+    let mut engine: rx_engine::run::RxEngine = rx_engine::run::build_engine(
         WindowConfig { width: 600, height: 400 },
         EcsLayerBuilder::new(Box::new(|mut w, d, ctx| {
             let mut path_buf = &relative_to_current_path(&vec!["client", "resources", "cube.obj"]);
@@ -116,7 +136,7 @@ fn main() {
                     usage: rx_engine::interface::Usage::Vertex,
                 });
 
-                let mapper = ctx.renderer_device.buffer_mapper(&static_mesh_buffer);
+
 
                 struct Vertex {
                     position: [f32; 3],
@@ -151,10 +171,80 @@ fn main() {
                 };
                 let vertexes = Vertex::from_pos_norm(&result.positions, &result.normals);
 
-                mapper.write_slice::<Vertex>(vertexes.as_slice());
-                println!("{:?}", std::mem::size_of::<Vertex>());
-                let ve = mapper.read(std::mem::size_of::<Vertex>() * vertexes.len() / std::mem::size_of::<f32>());
-                println!("{:?}", ve);
+                let b_ptr = ctx.renderer_device.map_buffer(&static_mesh_buffer);
+                unsafe { std::ptr::copy(vertexes.as_ptr() as *mut u8, b_ptr, vertexes.len() * std::mem::size_of::<Vertex>()) }
+                let vert_from_gl = unsafe { std::slice::from_raw_parts(b_ptr as *mut f32, std::mem::size_of::<Vertex>() * vertexes.len() / std::mem::size_of::<f32>()) };
+                println!("{:?}", vert_from_gl);
+
+                ctx.renderer_device.unmap_buffer(&static_mesh_buffer);
+
+                use rx_engine::interface;
+
+                let desc_set_layout = ctx.renderer_device.create_descriptor_set_layout(&[interface::DescriptorSetLayoutBinding {
+                    location: 0,
+                    desc: interface::DescriptorType::UniformBuffer,
+                }]);
+
+                let pipeline_layout = ctx.renderer_device.create_pipeline_layout(desc_set_layout);
+
+
+                let pipeline = {
+                    use rx_engine::interface;
+                    use std::mem::size_of;
+                    use std::fs;
+
+
+                    let shader_set = interface::ShaderSet {
+                        vertex: ctx.renderer_device.create_shader_mod(interface::ShaderModDescriptor {
+                            stype: interface::ShaderType::Vertex,
+                            source: fs::read_to_string(&relative_to_current_path(&vec!["client", "src", "test", "vert.glsl"])).expect(""),
+                        }),
+                        fragment: ctx.renderer_device.create_shader_mod(interface::ShaderModDescriptor {
+                            stype: interface::ShaderType::Fragment,
+                            source: fs::read_to_string(&relative_to_current_path(&vec!["client", "src", "test", "frag.glsl"])).expect(""),
+                        }),
+                    };
+
+                    let mut pipeline_desc = interface::PipelineDescriptor::new(
+                        interface::Primitive::Triangles,
+                        shader_set,
+                        pipeline_layout,
+                    );
+
+                    pipeline_desc.push_vb(interface::VertexBufferDescriptor {
+                        binding: 0,
+                        stride: size_of::<Vertex>(),
+                    });
+
+                    pipeline_desc.push_attr(interface::AttributeDescriptor {
+                        binding: 0,
+                        location: 0,
+                        data: interface::VertexData {
+                            offset: size_of::<[f32; 3]>() * 0,
+                            data_type: interface::DataType::Vec3f32,
+                        },
+                    });
+
+                    pipeline_desc.push_attr(interface::AttributeDescriptor {
+                        binding: 0,
+                        location: 1,
+                        data: interface::VertexData {
+                            offset: size_of::<[f32; 3]>() * 1,
+                            data_type: interface::DataType::Vec3f32,
+                        },
+                    });
+
+                    pipeline_desc.push_attr(interface::AttributeDescriptor {
+                        binding: 0,
+                        location: 2,
+                        data: interface::VertexData {
+                            offset: size_of::<[f32; 3]>() * 2,
+                            data_type: interface::DataType::Vec3f32,
+                        },
+                    });
+
+                    ctx.renderer_device.create_pipeline(pipeline_desc)
+                };
             }
 
             let mut vertex_array: backend::VertexArray = ctx.renderer_device.vertex_array();

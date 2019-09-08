@@ -11,8 +11,7 @@ hot_reload = []
 glfw_backend = []
 
 [dependencies]
-#
-#imgui-opengl-renderer = "0.4.0"
+itertools = "0.8.0"
 imgui = {version = "0.1.0", package= "imgui"}
 #
 [dependencies.backend-interface]

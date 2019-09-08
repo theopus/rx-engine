@@ -2,6 +2,7 @@ pub extern crate imgui;
 
 use std::any::Any;
 use std::fmt;
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::path::Path;
 use std::slice::Iter;
@@ -22,15 +23,13 @@ pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send
     type PlatformManager: PlatformManager<Self>;
     type ImGuiRenderer: ImGuiRenderer;
     //
-    type Buffer;
-    type BufferMapper: BufferMapper<Self> + Drop;
-}
-
-
-
-pub trait BufferMapper<B: Backend> {
-    fn write_slice<T>(&self, data: &[T]);
-    fn read(&self, count: usize) -> Vec<f32>;
+    type Buffer: Send + Sync;
+    type Pipeline: Send + Sync;
+    type CommandBuffer: CommandBuffer<Self> + Send + Sync;
+    type ShaderMod: Send + Sync + Debug;
+    type DescriptorSet: Send + Sync + Debug;
+    type DescriptorSetLayout: Send + Sync + Debug;
+    type PipelineLayout: Send + Sync + Debug;
 }
 
 pub struct WindowConfig {
@@ -109,14 +108,107 @@ pub trait Shader {
     fn unbind(&self);
 }
 
+#[derive(Debug)]
 pub struct BufferDescriptor {
     pub size: u32,
-    pub usage: Usage
+    pub usage: Usage,
 }
 
+
+#[derive(Debug)]
+pub struct PipelineDescriptor<B: Backend> {
+    pub primitives: Primitive,
+    pub shader_set: ShaderSet<B>,
+    pub layout: B::PipelineLayout,
+    pub vertex_buffers: Vec<VertexBufferDescriptor>,
+    pub vertex_attributes: Vec<AttributeDescriptor>,
+}
+
+impl<B> PipelineDescriptor<B> where B: Backend {
+    pub fn new(primitive: Primitive, shader_set: ShaderSet<B>, layout: B::PipelineLayout) -> PipelineDescriptor<B> {
+        PipelineDescriptor {
+            primitives: primitive,
+            shader_set: shader_set,
+            layout: layout,
+            vertex_buffers: Vec::new(),
+            vertex_attributes: Vec::new(),
+        }
+    }
+
+    pub fn push_vb(&mut self, desc: VertexBufferDescriptor) {
+        self.vertex_buffers.push(desc);
+    }
+    pub fn push_attr(&mut self, desc: AttributeDescriptor) {
+        self.vertex_attributes.push(desc);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct VertexBufferDescriptor {
+    pub binding: u8,
+    pub stride: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct AttributeDescriptor {
+    pub binding: u16,
+    pub location: u16,
+    pub data: VertexData,
+}
+
+
+#[derive(Debug)]
 pub enum Usage {
     Vertex,
     Index,
+    Uniform,
+}
+
+#[derive(Debug, Clone)]
+pub struct VertexData {
+    pub offset: usize,
+    pub data_type: DataType,
+}
+
+#[derive(Debug)]
+pub enum Primitive {
+    Triangles,
+    TrianglesFan,
+    TrianglesStrip,
+    Quads,
+}
+
+#[derive(Debug, Clone)]
+pub enum DataType {
+    Vec3f32,
+    Mat4f32,
+}
+
+pub struct ShaderModDescriptor {
+    pub stype: ShaderType,
+    pub source: String,
+}
+
+pub enum ShaderType {
+    Vertex,
+    Fragment,
+}
+
+
+#[derive(Debug)]
+pub struct ShaderSet<B: Backend> {
+    pub vertex: B::ShaderMod,
+    pub fragment: B::ShaderMod,
+}
+
+pub struct DescriptorSetLayoutBinding {
+    pub location: u8,
+    pub desc: DescriptorType,
+}
+
+pub enum DescriptorType {
+    UniformBuffer,
+    Sampler,
 }
 
 pub trait RendererDevice<B: Backend> {
@@ -124,9 +216,42 @@ pub trait RendererDevice<B: Backend> {
     fn vertex_buffer(&self) -> B::VertexBuffer;
     fn index_buffer(&self, indexes: &[u32]) -> B::IndexBuffer;
     fn shader(&self, vertex: &Path, fragment: &Path, mem_layout: &BufferLayout) -> B::Shader;
-
+    ///
     fn create_buffer(&self, desc: BufferDescriptor) -> B::Buffer;
-    fn buffer_mapper(&self, buffer: &B::Buffer) -> B::BufferMapper;
+    fn map_buffer(&self, buffer: &B::Buffer) -> *mut u8;
+    fn unmap_buffer(&self, buffer: &B::Buffer);
+    fn create_pipeline(&self, desc: PipelineDescriptor<B>) -> B::Pipeline;
+
+    //make pooled
+    fn create_cmd_buffer(&self) -> B::CommandBuffer;
+    //make pooled
+    fn allocate_descriptor_set(&self, desc: B::DescriptorSetLayout) -> B::DescriptorSet;
+    fn execute(&self, cmd: B::CommandBuffer);
+
+    fn create_shader_mod(&self, desc: ShaderModDescriptor) -> B::ShaderMod;
+    fn create_descriptor_set_layout(&self, bindings: &[DescriptorSetLayoutBinding]) -> B::DescriptorSetLayout;
+    fn create_pipeline_layout(&self, bindings: B::DescriptorSetLayout) -> B::PipelineLayout;
+
+
+    fn write_descriptor_set(&self, desc_set_write: DescriptorSetWrite<B>);
+}
+
+pub struct DescriptorSetWrite<'a, B: Backend> {
+    pub binding: u32,
+    pub descriptor: Descriptor<'a, B>,
+}
+
+pub enum Descriptor<'a, B: Backend> {
+    Buffer(&'a B::Buffer)
+}
+
+pub trait CommandBuffer<B: Backend> {
+    fn prepare_pipeline(&mut self, pipeline: &B::Pipeline);
+    fn bind_vertex_buffer(&mut self, binding: usize, buffer: &B::Buffer);
+    fn bind_index_buffer(&mut self, buffer: &B::Buffer);
+    fn buffer_data(&mut self, buffer: &B::Buffer, data: &[u8]);
+    fn draw_indexed(&mut self, count: u32, offset: u32);
+    fn bind_descriptor_set(&self, pipeline_layout: &B::PipelineLayout, desc_set: &B::DescriptorSet);
 }
 
 pub trait RendererApi<B: Backend> {

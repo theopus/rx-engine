@@ -252,77 +252,11 @@ impl VertexArray<Backend> for OpenGLVertexArray {
     }
 }
 
-pub struct OpenGlBuffer {
-    id: u32,
-    target: u32,
-    usage: u32,
-    size: u32,
-}
-
-pub struct OpenGlBufferMapper {
-    gl: Rc<gl::Gl>,
-    ptr: *mut c_void,
-    target: u32,
-}
-
-impl interface::BufferMapper<Backend> for OpenGlBufferMapper {
-    fn write_slice<T>(&self, data: &[T]) {
-        let count = std::mem::size_of::<T>() * data.len();
-        unsafe { std::ptr::copy(data.as_ptr() as *mut c_void, self.ptr, count); }
-    }
-
-    fn read(&self, count: usize) -> Vec<f32> {
-        let slice = unsafe { std::slice::from_raw_parts(self.ptr as *const f32, count as usize) };
-        slice.to_vec()
-    }
-}
-
-impl Drop for OpenGlBufferMapper {
-    fn drop(&mut self) {
-        unsafe { self.gl.UnmapBuffer(self.target) };
-    }
-}
-
-impl OpenGlBuffer {
-    pub fn new(gl: &gl::Gl, desc: interface::BufferDescriptor) -> OpenGlBuffer {
-        unsafe {
-            let id = Self::generate(gl);
-            let buffer = OpenGlBuffer { id, target: to_gl_buffer_type(&desc.usage), usage: gl::STATIC_DRAW, size: desc.size };
-            Self::bind(gl, &buffer);
-            Self::buffer_empty(gl, &buffer);
-
-            buffer
-        }
-    }
-
-    pub unsafe fn generate(gl: &gl::Gl) -> u32 {
-        let mut id: gl::types::GLuint = 0;
-        gl.GenBuffers(1, &mut id);
-        id
-    }
-
-    pub unsafe fn bind(gl: &gl::Gl, buffer: &OpenGlBuffer) {
-        gl.BindBuffer(buffer.target, buffer.id);
-    }
-
-    pub unsafe fn buffer_empty(gl: &gl::Gl, buffer: &OpenGlBuffer) {
-        gl.BufferData(buffer.target, buffer.size as isize, std::ptr::null(), buffer.usage);
-    }
-
-    pub fn mapper(gl: Rc<gl::Gl>, buffer: &OpenGlBuffer) -> OpenGlBufferMapper {
-        let mut ptr: *mut c_void = unsafe { gl.MapBuffer(buffer.target, gl::READ_WRITE) };
-        OpenGlBufferMapper {
-            gl: gl.clone(),
-            ptr,
-            target: buffer.target,
-        }
-    }
-}
-
-fn to_gl_buffer_type(u: &interface::Usage) -> u32 {
+pub(crate) fn to_gl_buffer_type(u: &interface::Usage) -> u32 {
     match u {
         interface::Usage::Vertex => gl::ARRAY_BUFFER,
         interface::Usage::Index => gl::ELEMENT_ARRAY_BUFFER,
+        interface::Usage::Uniform => { gl::UNIFORM_BUFFER }
     }
 }
 

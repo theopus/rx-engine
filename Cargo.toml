@@ -5,6 +5,7 @@ members = [
     "core",
     "backend-interface",
     "backend-opengl",
+    "backend-vulkan",
     "gl",
    # "playground",
 ]

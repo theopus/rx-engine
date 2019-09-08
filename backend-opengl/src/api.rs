@@ -23,6 +23,7 @@ use crate::{
     shader::OpenGLShader,
 };
 use crate::shader::ReloadableOpenGLShader;
+use std::os::raw::c_void;
 
 pub struct OpenGLRendererDevice {
     gl_api: Rc<gl::Gl>,
@@ -66,12 +67,48 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
         ), self.gl_api.clone())
     }
 
-    fn create_buffer(&self, desc: interface::BufferDescriptor) -> <Backend as InterfaceBackend>::Buffer {
-        buffer::OpenGlBuffer::new(&self.gl_api, desc)
+    fn create_buffer(&self, desc: interface::BufferDescriptor) -> <Backend as interface::Backend>::Buffer {
+        crate::buffer_v2::OpenGlBuffer::new(&self.gl_api, desc)
     }
 
-    fn buffer_mapper(&self, buffer: &<Backend as InterfaceBackend>::Buffer) -> <Backend as InterfaceBackend>::BufferMapper {
-        buffer::OpenGlBuffer::mapper(self.gl_api.clone(), buffer)
+    fn map_buffer(&self, buffer: &<Backend as interface::Backend>::Buffer) -> *mut u8 {
+        crate::buffer_v2::OpenGlBuffer::mapper(self.gl_api.clone(), buffer)
+    }
+
+    fn unmap_buffer(&self, buffer: &<Backend as interface::Backend>::Buffer) {
+        crate::buffer_v2::OpenGlBuffer::unmap(self.gl_api.clone(), buffer)
+    }
+
+    fn create_pipeline(&self, desc: interface::PipelineDescriptor<Backend>) -> <Backend as interface::Backend>::Pipeline {
+        crate::pipeline::OpenGlPipeline::new(&self.gl_api, desc)
+    }
+
+    fn create_cmd_buffer(&self) -> <Backend as interface::Backend>::CommandBuffer {
+        crate::pipeline::OpenGlCommandBuffer::new()
+    }
+
+    fn allocate_descriptor_set(&self, desc: <Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::DescriptorSet {
+        unimplemented!()
+    }
+
+    fn execute(&self, cmd: <Backend as interface::Backend>::CommandBuffer) {
+        unimplemented!()
+    }
+
+    fn create_shader_mod(&self, desc:  interface::ShaderModDescriptor) -> <Backend as interface::Backend>::ShaderMod {
+        crate::shader_mod::OpenGlShaderMod{}
+    }
+
+    fn create_descriptor_set_layout(&self, bindings: &[interface::DescriptorSetLayoutBinding]) -> <Backend as interface::Backend>::DescriptorSetLayout {
+        crate::shader_mod::OpenGlDescriptorSetLayout{}
+    }
+
+    fn create_pipeline_layout(&self, bindings: <Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::PipelineLayout {
+        crate::pipeline::OpenGlPipelineLayout{}
+    }
+
+    fn write_descriptor_set(&self, desc_set_write: interface::DescriptorSetWrite<Backend>) {
+        unimplemented!()
     }
 }
 
@@ -102,7 +139,7 @@ impl RendererApi<Backend> for OpenGLRendererApi {
             self.gl_api.DrawElements(gl::TRIANGLES,
                                      vertex_array.get_index_buffer().length() as i32,
                                      gl::UNSIGNED_INT,
-                                     std::ptr::null())
+                                     0 as *const c_void)
         }
         //TODO: Unbinding
         vertex_array.unbind();
