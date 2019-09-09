@@ -197,11 +197,11 @@ fn main() {
                     let shader_set = interface::ShaderSet {
                         vertex: ctx.renderer_device.create_shader_mod(interface::ShaderModDescriptor {
                             stype: interface::ShaderType::Vertex,
-                            source: fs::read_to_string(&relative_to_current_path(&vec!["client", "src", "test", "vert.glsl"])).expect(""),
+                            source: fs::read_to_string(&relative_to_current_path(&vec!["client", "src", "ubershader", "vert.glsl"])).expect(""),
                         }),
                         fragment: ctx.renderer_device.create_shader_mod(interface::ShaderModDescriptor {
                             stype: interface::ShaderType::Fragment,
-                            source: fs::read_to_string(&relative_to_current_path(&vec!["client", "src", "test", "frag.glsl"])).expect(""),
+                            source: fs::read_to_string(&relative_to_current_path(&vec!["client", "src", "ubershader", "frag.glsl"])).expect(""),
                         }),
                     };
 
@@ -229,8 +229,8 @@ fn main() {
                         binding: 0,
                         location: 1,
                         data: interface::VertexData {
-                            offset: size_of::<[f32; 3]>() * 1,
-                            data_type: interface::DataType::Vec3f32,
+                            offset: size_of::<[f32; 2]>() * 1,
+                            data_type: interface::DataType::Vec2f32,
                         },
                     });
 

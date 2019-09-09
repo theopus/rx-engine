@@ -152,7 +152,7 @@ pub struct VertexBufferDescriptor {
 #[derive(Debug, Clone)]
 pub struct AttributeDescriptor {
     pub binding: u16,
-    pub location: u16,
+    pub location: u32,
     pub data: VertexData,
 }
 
@@ -178,9 +178,10 @@ pub enum Primitive {
     Quads,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DataType {
     Vec3f32,
+    Vec2f32,
     Mat4f32,
 }
 

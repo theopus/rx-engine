@@ -15,11 +15,13 @@ use crate::pipeline::OpenGlCommand::{BindIndexBuffer, BindVertexBuffer, DrawInde
 
 type GlPrimitive = gl::types::GLenum;
 type VaoId = gl::types::GLuint;
+type ProgramId = gl::types::GLuint;
 type Binding = u8;
 
 #[derive(Debug, Clone)]
 pub struct OpenGlPipeline {
     vao_id: VaoId,
+    program_id: ProgramId,
     primitive: GlPrimitive,
     layout: Vec<(VertexBufferDescriptor, Vec<AttributeDescriptor>)>,
     binding_cache: HashMap<usize, u32>,
@@ -27,22 +29,10 @@ pub struct OpenGlPipeline {
 }
 
 impl OpenGlPipeline {
-    pub fn new(gl: &Gl, desc: PipelineDescriptor<Backend>) -> Self {
-        let mut layout = Vec::with_capacity(desc.vertex_buffers.len());
-        'main: for (bind, attr) in &desc.vertex_attributes.into_iter().group_by(|d| d.binding) {
-            for buff in desc.vertex_buffers.clone() {
-                if buff.binding == bind as u8 {
-                    layout.insert(bind as usize, (buff.clone(), attr
-                        .map(|c| c.clone()).collect::<Vec<AttributeDescriptor>>()));
-                    continue 'main;
-                }
-            }
-            panic!("Not found binding {}", bind);
-        }
-        println!("{:?}", layout);
-
-        OpenGlPipeline {
-            vao_id: unsafe { gen_vao(gl) },
+    pub unsafe fn new(gl: &Gl, desc: PipelineDescriptor<Backend>) -> Result<Self, String> {
+        Ok(OpenGlPipeline {
+            vao_id: gen_vao(gl),
+            program_id: create_program(&gl, &desc)?,
             primitive: match desc.primitives {
                 Primitive::Triangles => gl::TRIANGLES,
                 Primitive::TrianglesFan => gl::TRIANGLE_FAN,
@@ -50,11 +40,28 @@ impl OpenGlPipeline {
                 //TODO:[POSSIBLE_WTF]
                 Primitive::Quads => gl::TRIANGLES,
             },
-            layout,
+            layout: {
+                let mut layout = Vec::with_capacity(desc.vertex_buffers.len());
+                'main: for (bind, attr) in &desc.vertex_attributes.into_iter().group_by(|d| d.binding) {
+                    for buff in desc.vertex_buffers.clone() {
+                        if buff.binding == bind as u8 {
+                            layout.insert(bind as usize, (buff.clone(), attr
+                                .map(|c| c.clone()).collect::<Vec<AttributeDescriptor>>()));
+                            continue 'main;
+                        }
+                    }
+                    //TODO:ok
+                    panic!("Not found binding {}", bind);
+                }
+                println!("{:?}", layout);
+                //TODO:ok
+                layout
+            },
             binding_cache: HashMap::new(),
             index_buffer_cache: 0,
-        }
+        })
     }
+
     pub unsafe fn prepare(&self, gl: &Gl) {
         gl.BindVertexArray(self.vao_id);
     }
@@ -78,10 +85,13 @@ impl OpenGlPipeline {
                 gl.VertexAttribPointer(attr.location.into(),
                                        match attr.data.data_type {
                                            interface::DataType::Vec3f32 => 3,
+                                           interface::DataType::Vec2f32 => 2,
                                            interface::DataType::Mat4f32 => 4,
+
                                        },
                                        match attr.data.data_type {
                                            interface::DataType::Vec3f32 => gl::FLOAT,
+                                           interface::DataType::Vec2f32 => gl::FLOAT,
                                            interface::DataType::Mat4f32 => gl::FLOAT,
                                        },
                                        gl::FALSE,
@@ -95,6 +105,78 @@ impl OpenGlPipeline {
     }
 }
 
+unsafe fn create_program(gl: &Gl, desc: &PipelineDescriptor<Backend>) -> Result<ProgramId, String> {
+    let program = gl.CreateProgram();
+    gl.AttachShader(program, desc.shader_set.vertex.id);
+    gl.AttachShader(program, desc.shader_set.fragment.id);
+    gl.LinkProgram(program);
+    gl.DetachShader(program, desc.shader_set.vertex.id);
+    gl.DetachShader(program, desc.shader_set.fragment.id);
+    validate_program(gl, program)?;
+    validate_attrs(gl, program, desc)
+}
+
+unsafe fn validate_attrs(gl: &Gl, id: ProgramId, desc: &PipelineDescriptor<Backend>)
+                         -> Result<ProgramId, String> {
+    let (mut len, mut name) = {
+        let mut len: gl::types::GLint = 0;
+        gl.GetProgramiv(id, gl::ACTIVE_ATTRIBUTE_MAX_LENGTH, &mut len);
+        let name = crate::shader_mod::create_whitespace_cstring_with_len(len as usize);
+        (len, name)
+    };
+
+    for attr in &desc.vertex_attributes {
+        let mut written: i32 = 0;
+        let mut size: i32 = 0;
+        let mut dtype: u32 = 0;
+
+        println!("{:?}", attr);
+        gl.GetActiveAttrib(id,
+                           attr.location as u32,
+                           len,
+                           &mut written,
+                           &mut size,
+                           &mut dtype,
+                           name.as_ptr() as *mut gl::types::GLchar);
+        println!("{:?}", name);
+
+        assert_eq!(1, size);
+        assert_eq!(match attr.data.data_type {
+            interface::DataType::Vec3f32 => gl::FLOAT_VEC3,
+            interface::DataType::Vec2f32 => gl::FLOAT_VEC2,
+            interface::DataType::Mat4f32 => gl::FLOAT_MAT4,
+        }, dtype);
+    }
+    Ok(id)
+}
+
+fn validate_program(gl: &Gl, id: ProgramId) -> Result<ProgramId, String> {
+    let mut success: gl::types::GLint = 1;
+    unsafe {
+        gl.GetProgramiv(id, gl::LINK_STATUS, &mut success);
+    }
+    if success == 0 {
+        let mut len: gl::types::GLint = 0;
+        unsafe {
+            gl.GetProgramiv(id, gl::INFO_LOG_LENGTH, &mut len);
+        }
+
+        let error = crate::shader_mod::create_whitespace_cstring_with_len(len as usize);
+
+        unsafe {
+            gl.GetProgramInfoLog(
+                id,
+                len,
+                std::ptr::null_mut(),
+                error.as_ptr() as *mut gl::types::GLchar,
+            );
+        }
+
+        return Err(error.to_string_lossy().into_owned());
+    }
+    Ok(id)
+}
+
 unsafe fn gen_vao(gl: &Gl) -> VaoId {
     let mut id: gl::types::GLuint = 0;
     gl.GenVertexArrays(1, &mut id);
@@ -103,14 +185,10 @@ unsafe fn gen_vao(gl: &Gl) -> VaoId {
 
 
 #[derive(Debug)]
-pub struct OpenGlPipelineLayout {
-
-}
+pub struct OpenGlPipelineLayout {}
 
 #[derive(Debug)]
-pub struct OpenGlDescriptorSet {
-
-}
+pub struct OpenGlDescriptorSet {}
 
 #[derive(Debug)]
 enum OpenGlCommand {

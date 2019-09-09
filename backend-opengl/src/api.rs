@@ -80,7 +80,8 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn create_pipeline(&self, desc: interface::PipelineDescriptor<Backend>) -> <Backend as interface::Backend>::Pipeline {
-        crate::pipeline::OpenGlPipeline::new(&self.gl_api, desc)
+        unsafe {crate::pipeline::OpenGlPipeline::new(&self.gl_api, desc)
+            .expect("err")}
     }
 
     fn create_cmd_buffer(&self) -> <Backend as interface::Backend>::CommandBuffer {
@@ -96,7 +97,8 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn create_shader_mod(&self, desc:  interface::ShaderModDescriptor) -> <Backend as interface::Backend>::ShaderMod {
-        crate::shader_mod::OpenGlShaderMod{}
+        crate::shader_mod::OpenGlShaderMod::new(&self.gl_api, desc)
+            .expect("err")
     }
 
     fn create_descriptor_set_layout(&self, bindings: &[interface::DescriptorSetLayoutBinding]) -> <Backend as interface::Backend>::DescriptorSetLayout {
