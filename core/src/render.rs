@@ -7,7 +7,7 @@ use std::{
 };
 use std::mem::size_of;
 
-use interface::{RendererApi, RendererDevice, Shader};
+use interface::{CommandBuffer, RendererApi, RendererDevice, Shader};
 
 use crate::asset::{AssetHolder, AssetPtr};
 use crate::loader::Loader;
@@ -23,6 +23,7 @@ pub struct Renderer {
     pipeline: backend::Pipeline,
     vertex: backend::Buffer,
     index: backend::Buffer,
+    index_count: usize,
 
     sender: Sender<DrawIndexed>,
     receiver: Receiver<DrawIndexed>,
@@ -133,6 +134,8 @@ impl Renderer {
             device.create_pipeline(pipeline_desc)
         };
 
+        device.
+
         let (s, r) = mpsc::channel();
         Renderer {
             api,
@@ -140,6 +143,7 @@ impl Renderer {
             pipeline,
             vertex: static_mesh_buffer,
             index: static_mesh_index_buffer,
+            index_count: result.indices.len(),
             receiver: r,
             last_frame: Frame {
                 queue: s.clone(),
@@ -176,22 +180,29 @@ impl Renderer {
     }
 
     pub fn process(&self, device: &backend::RendererDevice, ctx: &mut AssetHolder, frame: &mut Frame) {
+        let mut cmd_buffer = device.create_cmd_buffer();
+        cmd_buffer.clear_screen((0.5, 0.5, 0.5, 1.));
+        cmd_buffer.prepare_pipeline(&self.pipeline);
+        cmd_buffer.bind_vertex_buffer(0, &self.vertex);
+        cmd_buffer.bind_index_buffer(&self.vertex);
         for cmd in self.receiver.try_iter() {
-            let va: &backend::VertexArray = ctx.storage().get_ref(&cmd.0).unwrap();
-            let instance = cmd.1;
-            let material: &Material = ctx.storage().get_ref(instance.material()).unwrap();
-
-            material.bind();
-            instance.prepare(material);
-            let shader = material.shader();
-
-            shader.load_mat4("r_view", frame.view.as_slice());
-            shader.load_mat4("r_projection", frame.projection.as_slice());
-            shader.load_mat4("r_vp", (frame.projection * frame.view).as_slice());
-            shader.load_mat4("r_transformation", cmd.2.as_slice());
-            self.api.draw_indexed(va);
-            shader.unbind();
+//            let va: &backend::VertexArray = ctx.storage().get_ref(&cmd.0).unwrap();
+//            let instance = cmd.1;
+//            let material: &Material = ctx.storage().get_ref(instance.material()).unwrap();
+//
+//            material.bind();
+//            instance.prepare(material);
+//            let shader = material.shader();
+//
+//            shader.load_mat4("r_view", frame.view.as_slice());
+//            shader.load_mat4("r_projection", frame.projection.as_slice());
+//            shader.load_mat4("r_vp", (frame.projection * frame.view).as_slice());
+//            shader.load_mat4("r_transformation", cmd.2.as_slice());
+//            self.api.draw_indexed(va);
+//            shader.unbind();
+            cmd_buffer.draw_indexed(self.index_count as u32, 0)
         }
+        device.execute(cmd_buffer)
     }
 
     pub fn viewport(&self, w: i32, h: i32) {

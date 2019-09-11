@@ -87,11 +87,11 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn allocate_descriptor_set(&self, desc: <Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::DescriptorSet {
-        unimplemented!()
+        crate::pipeline::OpenGlDescriptorSet{}
     }
 
-    fn execute(&self, cmd: <Backend as interface::Backend>::CommandBuffer) {
-        unimplemented!()
+    fn execute(&self, mut cmd: <Backend as interface::Backend>::CommandBuffer) {
+        unsafe { cmd.execute(&self.gl_api); };
     }
 
     fn create_shader_mod(&self, desc:  interface::ShaderModDescriptor) -> <Backend as interface::Backend>::ShaderMod {
