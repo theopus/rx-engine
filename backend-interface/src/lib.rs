@@ -253,6 +253,7 @@ pub trait CommandBuffer<B: Backend> {
     fn buffer_data(&mut self, buffer: &B::Buffer, data: &[u8]);
     fn draw_indexed(&mut self, count: u32, offset: u32);
     fn bind_descriptor_set(&self, pipeline_layout: &B::PipelineLayout, desc_set: &B::DescriptorSet);
+    fn clear_screen(&mut self, color: (f32, f32, f32, f32));
 }
 
 pub trait RendererApi<B: Backend> {

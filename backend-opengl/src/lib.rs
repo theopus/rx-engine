@@ -10,6 +10,8 @@ pub use buffer::{
     OpenGLVertexArray as VertexArray,
     OpenGLVertexBuffer as VertexBuffer,
 };
+pub use buffer_v2::OpenGlBuffer as Buffer;
+pub use pipeline::OpenGlPipeline as Pipeline;
 pub use platform_glfw::{
     GlfwImGuiRenderer as ImGuiRenderer,
     GlfwPlatformManager as PlatformManager,

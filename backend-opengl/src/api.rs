@@ -25,16 +25,14 @@ use crate::{
 use crate::shader::ReloadableOpenGLShader;
 use std::os::raw::c_void;
 
+#[derive(Clone)]
 pub struct OpenGLRendererDevice {
     gl_api: Rc<gl::Gl>,
-    rl: ResourceListener,
 }
 
 impl OpenGLRendererDevice {
     pub fn new(gl_api: Rc<gl::Gl>) -> Self {
-        let mut listener = ResourceListener::new();
-        listener.start();
-        OpenGLRendererDevice { gl_api, rl: listener }
+        OpenGLRendererDevice { gl_api}
     }
 }
 

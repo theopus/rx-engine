@@ -11,7 +11,7 @@ use interface::VertexBufferDescriptor;
 
 use crate::Backend;
 use crate::buffer_v2::OpenGlBuffer;
-use crate::pipeline::OpenGlCommand::{BindIndexBuffer, BindVertexBuffer, DrawIndexed, PreparePipeline};
+use crate::pipeline::OpenGlCommand::{BindIndexBuffer, BindVertexBuffer, ClearScreen, DrawIndexed, PreparePipeline};
 
 type GlPrimitive = gl::types::GLenum;
 type VaoId = gl::types::GLuint;
@@ -87,7 +87,6 @@ impl OpenGlPipeline {
                                            interface::DataType::Vec3f32 => 3,
                                            interface::DataType::Vec2f32 => 2,
                                            interface::DataType::Mat4f32 => 4,
-
                                        },
                                        match attr.data.data_type {
                                            interface::DataType::Vec3f32 => gl::FLOAT,
@@ -125,29 +124,50 @@ unsafe fn validate_attrs(gl: &Gl, id: ProgramId, desc: &PipelineDescriptor<Backe
         (len, name)
     };
 
-    for attr in &desc.vertex_attributes {
+    let attr_len = {
+        let mut len: gl::types::GLint = 0;
+        gl.GetProgramiv(id, gl::ACTIVE_ATTRIBUTES, &mut len);
+        len
+    };
+
+    let gl_attrs: Vec<(i32, u32, i32)> = (0..attr_len).into_iter().map(|attr_index| {
         let mut written: i32 = 0;
         let mut size: i32 = 0;
         let mut dtype: u32 = 0;
-
-        println!("{:?}", attr);
         gl.GetActiveAttrib(id,
-                           attr.location as u32,
+                           attr_index as u32,
                            len,
                            &mut written,
                            &mut size,
                            &mut dtype,
                            name.as_ptr() as *mut gl::types::GLchar);
-        println!("{:?}", name);
 
-        assert_eq!(1, size);
-        assert_eq!(match attr.data.data_type {
+        let n = &name.to_str().unwrap()[..written as usize];
+        let cstr = n.to_owned() + "\0";
+        let location = gl.GetAttribLocation(id, cstr.as_ptr() as *mut gl::types::GLchar);
+        (location, dtype, size)
+    }).collect::<Vec<(i32, u32, i32)>>();
+
+    for attr in &desc.vertex_attributes {
+        let gl_attr = get_attr(attr, &gl_attrs)?;
+        assert_eq!(gl_attr.0, attr.location as i32);
+        assert_eq!(gl_attr.1, match attr.data.data_type {
             interface::DataType::Vec3f32 => gl::FLOAT_VEC3,
             interface::DataType::Vec2f32 => gl::FLOAT_VEC2,
             interface::DataType::Mat4f32 => gl::FLOAT_MAT4,
-        }, dtype);
+        });
+        assert_eq!(gl_attr.2, 1);
     }
     Ok(id)
+}
+
+fn get_attr(attr: &AttributeDescriptor, gl_attrs: &Vec<(i32, u32, i32)>) -> Result<(i32, u32, i32), String> {
+    for gl_attr in gl_attrs {
+        if gl_attr.0 == attr.location as i32 {
+            return Ok(*gl_attr);
+        }
+    }
+    Err(format!("Not found attr {:?}", attr))
 }
 
 fn validate_program(gl: &Gl, id: ProgramId) -> Result<ProgramId, String> {
@@ -196,6 +216,7 @@ enum OpenGlCommand {
     BindVertexBuffer(usize, OpenGlBuffer),
     BindIndexBuffer(OpenGlBuffer),
     DrawIndexed(u32, u32),
+    ClearScreen((f32, f32, f32, f32)),
 }
 
 #[derive(Debug)]
@@ -233,6 +254,9 @@ impl OpenGlCommandBuffer {
                         *offset as *const c_void,
                     )
                 }
+                ClearScreen((r, g, b, a)) => {
+                    gl.ClearColor(*r, *g, *b, *a)
+                }
             }
         }
     }
@@ -261,6 +285,10 @@ impl interface::CommandBuffer<Backend> for OpenGlCommandBuffer {
 
     fn bind_descriptor_set(&self, pipeline_layout: &<Backend as interface::Backend>::PipelineLayout, desc_set: &<Backend as interface::Backend>::DescriptorSet) {
         unimplemented!()
+    }
+
+    fn clear_screen(&mut self, color: (f32, f32, f32, f32)) {
+        self.cmds.push(ClearScreen(color))
     }
 }
 

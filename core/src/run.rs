@@ -67,7 +67,7 @@ impl<'l> RxEngine<'l> {
         RxEngine {
             ctx: EngineContext {
                 platform,
-                renderer: Renderer::new(render_api),
+                renderer: Renderer::new(render_api, &renderer_device),
                 renderer_device,
                 asset_holder: Default::default(),
             },
@@ -104,8 +104,7 @@ impl<'l> RxEngine<'l> {
             self.layer_dispatcher.run_layers(&mut frame, &mut self.ctx);
 
 
-
-            self.ctx.renderer.process_frame(&mut frame.frame, &mut self.ctx.asset_holder);
+            self.ctx.renderer.process_frame(&self.ctx.renderer_device, &mut frame.frame, &mut self.ctx.asset_holder);
 
             #[cfg(feature = "imgui_debug")]
                 self.imgui_ctx.imgui_renderer.render(frame.ui);
