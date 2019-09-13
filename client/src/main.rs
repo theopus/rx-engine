@@ -292,26 +292,46 @@ fn main() {
 
             let mut rng = rx_engine::rand::thread_rng();
 
-            for i in 0..100 {
+            for i in 0..1 {
                 w.create_entity()
                     .with(Transformation {
                         mtx: glm::identity()
                     })
                     .with(Position {
-                        x: rng.gen::<f32>() * 20.,
-                        y: rng.gen::<f32>() * 20.,
-                        z: rng.gen::<f32>() * 20.,
+                        x: 0.,
+                        y: 0.,
+                        z: 0.,
                     })
                     .with(Rotation {
-                        x: rng.gen::<f32>() * 20.,
-                        y: rng.gen::<f32>() * 20.,
-                        z: rng.gen::<f32>() * 20.,
+                        x: 0.,
+                        y: 0.,
+                        z: 0.,
                     })
                     .with(Render {
                         va: va_ptr.clone(),
                         material: instance.clone(),
                     })
                     .build();
+
+//                w.create_entity()
+//                    .with(Transformation {
+//                        mtx: glm::identity()
+//                    })
+//                    .with(Position {
+//                        x: rng.gen::<f32>() * 20.,
+//                        y: rng.gen::<f32>() * 20.,
+//                        z: rng.gen::<f32>() * 20.,
+//                    })
+//                    .with(Rotation {
+//                        x: rng.gen::<f32>() * 20.,
+//                        y: rng.gen::<f32>() * 20.,
+//                        z: rng.gen::<f32>() * 20.,
+//                    })
+//                    .with(Render {
+//                        va: va_ptr.clone(),
+//                        material: instance.clone(),
+//                    })
+//                    .build();
             }
 
 

@@ -5,5 +5,5 @@ out vec4 Color;
 uniform vec3 color_r;
 
 void main(){
-    Color = vec4(color_r.x, color_r.y, color_r.z, 1.0f);
+    Color = vec4(out_Color.x, out_Color.y, out_Color.z, 1.0f);
 }

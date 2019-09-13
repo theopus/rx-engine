@@ -131,10 +131,27 @@ impl Renderer {
                 },
             });
 
+            pipeline_desc.push_attr(interface::AttributeDescriptor {
+                binding: 0,
+                location: 1,
+                data: interface::VertexData {
+                    offset: size_of::<[f32; 2]>() * 1,
+                    data_type: interface::DataType::Vec2f32,
+                },
+            });
+
+            pipeline_desc.push_attr(interface::AttributeDescriptor {
+                binding: 0,
+                location: 2,
+                data: interface::VertexData {
+                    offset: size_of::<[f32; 3]>() * 2,
+                    data_type: interface::DataType::Vec3f32,
+                },
+            });
+
             device.create_pipeline(pipeline_desc)
         };
 
-        device.
 
         let (s, r) = mpsc::channel();
         Renderer {
@@ -184,7 +201,7 @@ impl Renderer {
         cmd_buffer.clear_screen((0.5, 0.5, 0.5, 1.));
         cmd_buffer.prepare_pipeline(&self.pipeline);
         cmd_buffer.bind_vertex_buffer(0, &self.vertex);
-        cmd_buffer.bind_index_buffer(&self.vertex);
+        cmd_buffer.bind_index_buffer(&self.index);
         for cmd in self.receiver.try_iter() {
 //            let va: &backend::VertexArray = ctx.storage().get_ref(&cmd.0).unwrap();
 //            let instance = cmd.1;
