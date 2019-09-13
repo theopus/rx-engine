@@ -203,7 +203,7 @@ pub struct ShaderSet<B: Backend> {
 }
 
 pub struct DescriptorSetLayoutBinding {
-    pub location: u8,
+    pub binding: u8,
     pub desc: DescriptorType,
 }
 

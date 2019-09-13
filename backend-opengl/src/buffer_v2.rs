@@ -4,7 +4,7 @@ use std::rc::Rc;
 #[derive(Debug, Clone)]
 pub struct OpenGlBuffer {
     pub(crate)id: u32,
-    target: u32,
+    pub(crate)target: u32,
     usage: u32,
     size: u32,
 }

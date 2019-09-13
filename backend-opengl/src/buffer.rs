@@ -256,7 +256,7 @@ pub(crate) fn to_gl_buffer_type(u: &interface::Usage) -> u32 {
     match u {
         interface::Usage::Vertex => gl::ARRAY_BUFFER,
         interface::Usage::Index => gl::ELEMENT_ARRAY_BUFFER,
-        interface::Usage::Uniform => { gl::UNIFORM_BUFFER }
+        interface::Usage::Uniform => gl::UNIFORM_BUFFER
     }
 }
 

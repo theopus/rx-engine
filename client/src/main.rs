@@ -181,7 +181,7 @@ fn main() {
                 use rx_engine::interface;
 
                 let desc_set_layout = ctx.renderer_device.create_descriptor_set_layout(&[interface::DescriptorSetLayoutBinding {
-                    location: 0,
+                    binding: 0,
                     desc: interface::DescriptorType::UniformBuffer,
                 }]);
 
@@ -220,7 +220,7 @@ fn main() {
                         binding: 0,
                         location: 0,
                         data: interface::VertexData {
-                            offset: size_of::<[f32; 3]>() * 0,
+                            offset: 0,
                             data_type: interface::DataType::Vec3f32,
                         },
                     });
@@ -229,7 +229,7 @@ fn main() {
                         binding: 0,
                         location: 1,
                         data: interface::VertexData {
-                            offset: size_of::<[f32; 2]>() * 1,
+                            offset: 0,
                             data_type: interface::DataType::Vec2f32,
                         },
                     });
@@ -238,7 +238,7 @@ fn main() {
                         binding: 0,
                         location: 2,
                         data: interface::VertexData {
-                            offset: size_of::<[f32; 3]>() * 2,
+                            offset: 0,
                             data_type: interface::DataType::Vec3f32,
                         },
                     });
@@ -276,7 +276,7 @@ fn main() {
                 .with(Position {
                     x: 0.0,
                     y: 0.0,
-                    z: 100.0,
+                    z: 10.0,
                 })
                 .with(Rotation {
                     x: 0.0,

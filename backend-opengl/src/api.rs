@@ -108,7 +108,11 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn write_descriptor_set(&self, desc_set_write: interface::DescriptorSetWrite<Backend>) {
-        unimplemented!()
+        match &desc_set_write.descriptor {
+            interface::Descriptor::Buffer(buffer) => {
+                unsafe { self.gl_api.BindBufferBase(buffer.target, desc_set_write.binding, buffer.id); };
+            },
+        };
     }
 }
 

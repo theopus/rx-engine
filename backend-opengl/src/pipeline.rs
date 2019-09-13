@@ -65,6 +65,7 @@ impl OpenGlPipeline {
     pub unsafe fn prepare(&self, gl: &Gl) {
         gl.BindVertexArray(self.vao_id);
         gl.UseProgram(self.program_id);
+        gl.UniformBlockBinding(self.program_id, 0, 0)
     }
 
     pub unsafe fn bind_index(&mut self, buffer: &OpenGlBuffer, gl: &Gl) {

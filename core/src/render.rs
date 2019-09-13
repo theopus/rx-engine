@@ -24,6 +24,7 @@ pub struct Renderer {
     vertex: backend::Buffer,
     index: backend::Buffer,
     index_count: usize,
+    uniform: backend::Buffer,
 
     sender: Sender<DrawIndexed>,
     receiver: Receiver<DrawIndexed>,
@@ -45,7 +46,12 @@ impl Renderer {
             size: 1024,
             usage: interface::Usage::Index,
         });
+        let uniform = device.create_buffer(interface::BufferDescriptor {
+            size: 1024,
+            usage: interface::Usage::Uniform,
+        });
 
+        #[derive(Debug)]
         struct Vertex {
             position: [f32; 3],
             uv: [f32; 2],
@@ -78,6 +84,7 @@ impl Renderer {
             }
         };
         let vertexes = Vertex::from_pos_norm(&result.positions, &result.normals);
+        println!("{:?}", &vertexes);
 
         let b_ptr = device.map_buffer(&static_mesh_buffer);
         unsafe { std::ptr::copy(vertexes.as_ptr() as *mut u8, b_ptr, vertexes.len() * std::mem::size_of::<Vertex>()) }
@@ -87,17 +94,18 @@ impl Renderer {
         unsafe { std::ptr::copy(result.indices.as_ptr() as *mut u8, i_ptr, result.indices.len() * size_of::<u32>()) }
         device.unmap_buffer(&static_mesh_index_buffer);
 
+
+        let desc_set_layout = device.create_descriptor_set_layout(&[interface::DescriptorSetLayoutBinding {
+            binding: 0,
+            desc: interface::DescriptorType::UniformBuffer,
+        }]);
+
+        let pipeline_layout = device.create_pipeline_layout(desc_set_layout);
+
         let pipeline = {
             use interface;
             use std::mem::size_of;
             use std::fs;
-
-            let desc_set_layout = device.create_descriptor_set_layout(&[interface::DescriptorSetLayoutBinding {
-                location: 0,
-                desc: interface::DescriptorType::UniformBuffer,
-            }]);
-
-            let pipeline_layout = device.create_pipeline_layout(desc_set_layout);
 
 
             let shader_set = interface::ShaderSet {
@@ -119,14 +127,14 @@ impl Renderer {
 
             pipeline_desc.push_vb(interface::VertexBufferDescriptor {
                 binding: 0,
-                stride: size_of::<[f32; 3]>(),
+                stride: size_of::<Vertex>(),
             });
 
             pipeline_desc.push_attr(interface::AttributeDescriptor {
                 binding: 0,
                 location: 0,
                 data: interface::VertexData {
-                    offset: size_of::<[f32; 3]>() * 0,
+                    offset: 0,
                     data_type: interface::DataType::Vec3f32,
                 },
             });
@@ -135,7 +143,7 @@ impl Renderer {
                 binding: 0,
                 location: 1,
                 data: interface::VertexData {
-                    offset: size_of::<[f32; 2]>() * 1,
+                    offset: size_of::<[f32; 3]>(),
                     data_type: interface::DataType::Vec2f32,
                 },
             });
@@ -144,13 +152,18 @@ impl Renderer {
                 binding: 0,
                 location: 2,
                 data: interface::VertexData {
-                    offset: size_of::<[f32; 3]>() * 2,
+                    offset: size_of::<[f32; 3]>() + size_of::<[f32; 2]>(),
                     data_type: interface::DataType::Vec3f32,
                 },
             });
 
             device.create_pipeline(pipeline_desc)
         };
+
+        device.write_descriptor_set(interface::DescriptorSetWrite {
+            binding: 0,
+            descriptor: interface::Descriptor::Buffer(&uniform),
+        });
 
 
         let (s, r) = mpsc::channel();
@@ -160,6 +173,7 @@ impl Renderer {
             pipeline,
             vertex: static_mesh_buffer,
             index: static_mesh_index_buffer,
+            uniform: uniform,
             index_count: result.indices.len(),
             receiver: r,
             last_frame: Frame {
@@ -198,6 +212,8 @@ impl Renderer {
 
     pub fn process(&self, device: &backend::RendererDevice, ctx: &mut AssetHolder, frame: &mut Frame) {
         let mut cmd_buffer = device.create_cmd_buffer();
+        let u_ptr = device.map_buffer(&self.uniform);
+
         cmd_buffer.clear_screen((0.5, 0.5, 0.5, 1.));
         cmd_buffer.prepare_pipeline(&self.pipeline);
         cmd_buffer.bind_vertex_buffer(0, &self.vertex);
@@ -217,8 +233,16 @@ impl Renderer {
 //            shader.load_mat4("r_transformation", cmd.2.as_slice());
 //            self.api.draw_indexed(va);
 //            shader.unbind();
-            cmd_buffer.draw_indexed(self.index_count as u32, 0)
+
+
+
+            unsafe {
+                std::ptr::copy(frame.view.as_slice().as_ptr() as *mut u8, u_ptr, 1 * 16 * size_of::<u32>());
+                std::ptr::copy(frame.projection.as_slice().as_ptr() as *mut u8, u_ptr.offset(1 * 16 * 4), 1 * 16 * size_of::<u32>());
+                std::ptr::copy(cmd.2.as_slice().as_ptr() as *mut u8, u_ptr.offset(2 * 16 * 4), 1 * 16 * size_of::<u32>());
+            }
         }
+        device.unmap_buffer(&self.uniform);
         device.execute(cmd_buffer)
     }
 
