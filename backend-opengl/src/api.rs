@@ -86,7 +86,7 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
         crate::pipeline::OpenGlCommandBuffer::new()
     }
 
-    fn allocate_descriptor_set(&self, desc: <Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::DescriptorSet {
+    fn allocate_descriptor_set(&self, desc: &<Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::DescriptorSet {
         crate::pipeline::OpenGlDescriptorSet{}
     }
 
@@ -100,10 +100,10 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn create_descriptor_set_layout(&self, bindings: &[interface::DescriptorSetLayoutBinding]) -> <Backend as interface::Backend>::DescriptorSetLayout {
-        crate::shader_mod::OpenGlDescriptorSetLayout{}
+        crate::pipeline::OpenGlDescriptorSetLayout{}
     }
 
-    fn create_pipeline_layout(&self, bindings: <Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::PipelineLayout {
+    fn create_pipeline_layout(&self, bindings: &<Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::PipelineLayout {
         crate::pipeline::OpenGlPipelineLayout{}
     }
 

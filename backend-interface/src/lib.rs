@@ -226,18 +226,19 @@ pub trait RendererDevice<B: Backend> {
     //make pooled
     fn create_cmd_buffer(&self) -> B::CommandBuffer;
     //make pooled
-    fn allocate_descriptor_set(&self, desc: B::DescriptorSetLayout) -> B::DescriptorSet;
+    fn allocate_descriptor_set(&self, desc: &B::DescriptorSetLayout) -> B::DescriptorSet;
     fn execute(&self, cmd: B::CommandBuffer);
 
     fn create_shader_mod(&self, desc: ShaderModDescriptor) -> B::ShaderMod;
     fn create_descriptor_set_layout(&self, bindings: &[DescriptorSetLayoutBinding]) -> B::DescriptorSetLayout;
-    fn create_pipeline_layout(&self, bindings: B::DescriptorSetLayout) -> B::PipelineLayout;
+    fn create_pipeline_layout(&self, desc_layout: &B::DescriptorSetLayout) -> B::PipelineLayout;
 
 
     fn write_descriptor_set(&self, desc_set_write: DescriptorSetWrite<B>);
 }
 
 pub struct DescriptorSetWrite<'a, B: Backend> {
+    pub set: &'a B::DescriptorSet,
     pub binding: u32,
     pub descriptor: Descriptor<'a, B>,
 }

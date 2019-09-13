@@ -11,7 +11,12 @@ pub use buffer::{
     OpenGLVertexBuffer as VertexBuffer,
 };
 pub use buffer_v2::OpenGlBuffer as Buffer;
-pub use pipeline::OpenGlPipeline as Pipeline;
+pub use pipeline::{
+    OpenGlPipeline as Pipeline,
+    OpenGlDescriptorSetLayout as DescriptorSetLayout,
+    OpenGlPipelineLayout as PipelineLayout,
+    OpenGlDescriptorSet as DescriptorSet,
+};
 pub use platform_glfw::{
     GlfwImGuiRenderer as ImGuiRenderer,
     GlfwPlatformManager as PlatformManager,
@@ -56,6 +61,6 @@ impl backend_interface::Backend for Backend {
     type CommandBuffer = pipeline::OpenGlCommandBuffer;
     type ShaderMod = shader_mod::OpenGlShaderMod;
     type DescriptorSet = pipeline::OpenGlDescriptorSet;
-    type DescriptorSetLayout = shader_mod::OpenGlDescriptorSetLayout;
+    type DescriptorSetLayout = pipeline::OpenGlDescriptorSetLayout;
     type PipelineLayout = pipeline::OpenGlPipelineLayout;
 }

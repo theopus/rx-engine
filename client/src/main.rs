@@ -185,7 +185,7 @@ fn main() {
                     desc: interface::DescriptorType::UniformBuffer,
                 }]);
 
-                let pipeline_layout = ctx.renderer_device.create_pipeline_layout(desc_set_layout);
+                let pipeline_layout = ctx.renderer_device.create_pipeline_layout(&desc_set_layout);
 
 
                 let pipeline = {

@@ -206,11 +206,17 @@ unsafe fn gen_vao(gl: &Gl) -> VaoId {
 }
 
 
+
+#[derive(Debug)]
+pub struct OpenGlDescriptorSetLayout {}
+
 #[derive(Debug)]
 pub struct OpenGlPipelineLayout {}
 
 #[derive(Debug)]
 pub struct OpenGlDescriptorSet {}
+
+
 
 #[derive(Debug)]
 enum OpenGlCommand {

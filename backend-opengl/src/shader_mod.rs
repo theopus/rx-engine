@@ -26,9 +26,6 @@ impl OpenGlShaderMod {
 impl OpenGlShaderMod {}
 
 
-#[derive(Debug)]
-pub struct OpenGlDescriptorSetLayout {}
-
 
 fn shader_from_src(gl: &Gl, src: &str, kind: gl::types::GLenum) -> Result<u32, String> {
     let shader_id = unsafe { gl.CreateShader(kind) };

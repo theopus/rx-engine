@@ -100,7 +100,7 @@ impl Renderer {
             desc: interface::DescriptorType::UniformBuffer,
         }]);
 
-        let pipeline_layout = device.create_pipeline_layout(desc_set_layout);
+        let pipeline_layout = device.create_pipeline_layout(&desc_set_layout);
 
         let pipeline = {
             use interface;
@@ -160,7 +160,10 @@ impl Renderer {
             device.create_pipeline(pipeline_desc)
         };
 
+        let desc_set = device.allocate_descriptor_set(&desc_set_layout);
+
         device.write_descriptor_set(interface::DescriptorSetWrite {
+            set: &desc_set,
             binding: 0,
             descriptor: interface::Descriptor::Buffer(&uniform),
         });
@@ -241,6 +244,7 @@ impl Renderer {
                 std::ptr::copy(frame.projection.as_slice().as_ptr() as *mut u8, u_ptr.offset(1 * 16 * 4), 1 * 16 * size_of::<u32>());
                 std::ptr::copy(cmd.2.as_slice().as_ptr() as *mut u8, u_ptr.offset(2 * 16 * 4), 1 * 16 * size_of::<u32>());
             }
+            cmd_buffer.draw_indexed(self.index_count as u32, 0);
         }
         device.unmap_buffer(&self.uniform);
         device.execute(cmd_buffer)
