@@ -180,12 +180,17 @@ fn main() {
 
                 use rx_engine::interface;
 
-                let desc_set_layout = ctx.renderer_device.create_descriptor_set_layout(&[interface::DescriptorSetLayoutBinding {
-                    binding: 0,
-                    desc: interface::DescriptorType::UniformBuffer,
-                }]);
+                let desc_set_layout = ctx.renderer_device.create_descriptor_set_layout(
+                    &[
+                        interface::DescriptorSetLayoutBinding {
+                            binding: 0,
+                            desc: interface::DescriptorType::UniformBuffer,
+                        }
+                    ]);
 
-                let pipeline_layout = ctx.renderer_device.create_pipeline_layout(&desc_set_layout);
+                let pipeline_layout = ctx.renderer_device.create_pipeline_layout(
+                    &desc_set_layout,
+                    vec![]);
 
 
                 let pipeline = {
@@ -208,7 +213,7 @@ fn main() {
                     let mut pipeline_desc = interface::PipelineDescriptor::new(
                         interface::Primitive::Triangles,
                         shader_set,
-                        pipeline_layout,
+                        &pipeline_layout,
                     );
 
                     pipeline_desc.push_vb(interface::VertexBufferDescriptor {

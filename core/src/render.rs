@@ -26,6 +26,9 @@ pub struct Renderer {
     index_count: usize,
     uniform: backend::Buffer,
 
+    pipeline_layout: backend::PipelineLayout,
+    desc_set: backend::DescriptorSet,
+
     sender: Sender<DrawIndexed>,
     receiver: Receiver<DrawIndexed>,
 
@@ -95,12 +98,22 @@ impl Renderer {
         device.unmap_buffer(&static_mesh_index_buffer);
 
 
-        let desc_set_layout = device.create_descriptor_set_layout(&[interface::DescriptorSetLayoutBinding {
-            binding: 0,
-            desc: interface::DescriptorType::UniformBuffer,
-        }]);
+        let desc_set_layout = device.create_descriptor_set_layout(
+            &[
+                interface::DescriptorSetLayoutBinding {
+                    binding: 0,
+                    desc: interface::DescriptorType::UniformBuffer,
+                }
+            ]);
 
-        let pipeline_layout = device.create_pipeline_layout(&desc_set_layout);
+        let pipeline_layout = device.create_pipeline_layout(
+            &desc_set_layout,
+            vec![
+                interface::PipelineLayoutHint {
+                    location: 0,
+                    hint: interface::LayoutHint::Name("Matricies"),
+                }
+            ]);
 
         let pipeline = {
             use interface;
@@ -122,7 +135,7 @@ impl Renderer {
             let mut pipeline_desc = interface::PipelineDescriptor::new(
                 interface::Primitive::Triangles,
                 shader_set,
-                pipeline_layout,
+                &pipeline_layout,
             );
 
             pipeline_desc.push_vb(interface::VertexBufferDescriptor {
@@ -177,6 +190,8 @@ impl Renderer {
             vertex: static_mesh_buffer,
             index: static_mesh_index_buffer,
             uniform: uniform,
+            pipeline_layout,
+            desc_set,
             index_count: result.indices.len(),
             receiver: r,
             last_frame: Frame {
@@ -219,6 +234,8 @@ impl Renderer {
 
         cmd_buffer.clear_screen((0.5, 0.5, 0.5, 1.));
         cmd_buffer.prepare_pipeline(&self.pipeline);
+        cmd_buffer.bind_descriptor_set(&self.pipeline_layout, &self.desc_set);
+
         cmd_buffer.bind_vertex_buffer(0, &self.vertex);
         cmd_buffer.bind_index_buffer(&self.index);
         for cmd in self.receiver.try_iter() {

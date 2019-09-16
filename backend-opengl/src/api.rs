@@ -1,4 +1,5 @@
 use std::{fs, path::Path, rc::Rc, sync::mpsc::Receiver};
+use std::os::raw::c_void;
 
 use backend_interface::{
     Backend as InterfaceBackend,
@@ -23,7 +24,7 @@ use crate::{
     shader::OpenGLShader,
 };
 use crate::shader::ReloadableOpenGLShader;
-use std::os::raw::c_void;
+use core::borrow::Borrow;
 
 #[derive(Clone)]
 pub struct OpenGLRendererDevice {
@@ -32,7 +33,7 @@ pub struct OpenGLRendererDevice {
 
 impl OpenGLRendererDevice {
     pub fn new(gl_api: Rc<gl::Gl>) -> Self {
-        OpenGLRendererDevice { gl_api}
+        OpenGLRendererDevice { gl_api }
     }
 }
 
@@ -78,8 +79,10 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn create_pipeline(&self, desc: interface::PipelineDescriptor<Backend>) -> <Backend as interface::Backend>::Pipeline {
-        unsafe {crate::pipeline::OpenGlPipeline::new(&self.gl_api, desc)
-            .expect("err")}
+        unsafe {
+            crate::pipeline::OpenGlPipeline::new(&self.gl_api, desc)
+                .expect("err")
+        }
     }
 
     fn create_cmd_buffer(&self) -> <Backend as interface::Backend>::CommandBuffer {
@@ -87,31 +90,33 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn allocate_descriptor_set(&self, desc: &<Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::DescriptorSet {
-        crate::pipeline::OpenGlDescriptorSet{}
+        crate::pipeline::OpenGlDescriptorSet {}
     }
 
     fn execute(&self, mut cmd: <Backend as interface::Backend>::CommandBuffer) {
         unsafe { cmd.execute(&self.gl_api); };
     }
 
-    fn create_shader_mod(&self, desc:  interface::ShaderModDescriptor) -> <Backend as interface::Backend>::ShaderMod {
+    fn create_shader_mod(&self, desc: interface::ShaderModDescriptor) -> <Backend as interface::Backend>::ShaderMod {
         crate::shader_mod::OpenGlShaderMod::new(&self.gl_api, desc)
             .expect("err")
     }
 
     fn create_descriptor_set_layout(&self, bindings: &[interface::DescriptorSetLayoutBinding]) -> <Backend as interface::Backend>::DescriptorSetLayout {
-        crate::pipeline::OpenGlDescriptorSetLayout{}
+        crate::pipeline::OpenGlDescriptorSetLayout::new(bindings)
     }
 
-    fn create_pipeline_layout(&self, bindings: &<Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::PipelineLayout {
-        crate::pipeline::OpenGlPipelineLayout{}
+    fn create_pipeline_layout<I>(&self, desc_layout: &<Backend as interface::Backend>::DescriptorSetLayout, hints: I) -> <Backend as interface::Backend>::PipelineLayout
+        where
+            I: IntoIterator<Item = interface::PipelineLayoutHint>,{
+        crate::pipeline::OpenGlPipelineLayout::new(desc_layout, hints)
     }
 
     fn write_descriptor_set(&self, desc_set_write: interface::DescriptorSetWrite<Backend>) {
         match &desc_set_write.descriptor {
             interface::Descriptor::Buffer(buffer) => {
                 unsafe { self.gl_api.BindBufferBase(buffer.target, desc_set_write.binding, buffer.id); };
-            },
+            }
         };
     }
 }

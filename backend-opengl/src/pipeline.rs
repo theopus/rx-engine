@@ -1,5 +1,7 @@
+use core::borrow::Borrow;
 use std::collections::HashMap;
 use std::ffi::c_void;
+use std::fmt;
 
 use itertools::Itertools;
 
@@ -11,12 +13,16 @@ use interface::VertexBufferDescriptor;
 
 use crate::Backend;
 use crate::buffer_v2::OpenGlBuffer;
-use crate::pipeline::OpenGlCommand::{BindIndexBuffer, BindVertexBuffer, ClearScreen, DrawIndexed, PreparePipeline};
+use crate::pipeline::OpenGlCommand::{BindDescriptorSet, BindIndexBuffer, BindVertexBuffer, ClearScreen, DrawIndexed, PreparePipeline};
+use std::os::raw::c_char;
 
 type GlPrimitive = gl::types::GLenum;
 type VaoId = gl::types::GLuint;
+type BufferId = gl::types::GLuint;
 type ProgramId = gl::types::GLuint;
-type Binding = u8;
+type Binding = u32;
+type UboIndex = u32;
+
 
 #[derive(Debug, Clone)]
 pub struct OpenGlPipeline {
@@ -24,15 +30,19 @@ pub struct OpenGlPipeline {
     program_id: ProgramId,
     primitive: GlPrimitive,
     layout: Vec<(VertexBufferDescriptor, Vec<AttributeDescriptor>)>,
-    binding_cache: HashMap<usize, u32>,
-    index_buffer_cache: u32,
+
+    binding_cache: HashMap<Binding, BufferId>,
+    index_buffer_cache: BufferId,
+
+    ubo_index: HashMap<Binding, UboIndex>,
 }
 
 impl OpenGlPipeline {
     pub unsafe fn new(gl: &Gl, desc: PipelineDescriptor<Backend>) -> Result<Self, String> {
+        let program_id = create_program(&gl, &desc)?;
         Ok(OpenGlPipeline {
             vao_id: gen_vao(gl),
-            program_id: create_program(&gl, &desc)?,
+            program_id: program_id,
             primitive: match desc.primitives {
                 Primitive::Triangles => gl::TRIANGLES,
                 Primitive::TrianglesFan => gl::TRIANGLE_FAN,
@@ -59,13 +69,13 @@ impl OpenGlPipeline {
             },
             binding_cache: HashMap::new(),
             index_buffer_cache: 0,
+            ubo_index: ubo_bindings(&gl, program_id, &desc.layout),
         })
     }
 
     pub unsafe fn prepare(&self, gl: &Gl) {
         gl.BindVertexArray(self.vao_id);
         gl.UseProgram(self.program_id);
-        gl.UniformBlockBinding(self.program_id, 0, 0)
     }
 
     pub unsafe fn bind_index(&mut self, buffer: &OpenGlBuffer, gl: &Gl) {
@@ -75,9 +85,17 @@ impl OpenGlPipeline {
         }
     }
 
-    pub unsafe fn bind_buffer(&mut self, binding: usize, buffer: &OpenGlBuffer, gl: &Gl) {
+    pub unsafe fn bind_descriptors(&mut self, gl: &Gl, bindings: &Vec<u32>) {
+        for bind in bindings.into_iter() {
+            gl.UniformBlockBinding(self.program_id,
+                                   *self.ubo_index.get(bind).unwrap(),
+                                   *bind)
+        }
+    }
+
+    pub unsafe fn bind_buffer(&mut self, binding: u32, buffer: &OpenGlBuffer, gl: &Gl) {
         let (buff, attrs) = self.layout
-            .get(binding)
+            .get(binding as usize)
             .unwrap();
 
         if !self.binding_cache.contains_key(&binding) {
@@ -104,6 +122,28 @@ impl OpenGlPipeline {
             self.binding_cache.insert(binding, buffer.id);
         }
     }
+}
+
+unsafe fn ubo_bindings(gl: &Gl, program: ProgramId, pipeline_layout: &OpenGlPipelineLayout) -> HashMap<Binding, UboIndex> {
+    let mut indexes = HashMap::new();
+    for (binding, (desc, hint)) in &pipeline_layout.layout {
+        let index = if hint.is_some() {
+            match hint.as_ref().unwrap().hint {
+                interface::LayoutHint::Name(string) => {
+                    let string = string.to_owned() + "\0";
+                    gl.GetUniformBlockIndex(program, string.as_str().as_ptr() as *const c_char)
+                }
+                _ => *binding
+            }
+        } else {
+            *binding
+        };
+        if index == gl::INVALID_INDEX {
+            panic!("Invalid index binding:{:?}, resolved:{:?}", binding, index)
+        }
+        indexes.insert(*binding, index);
+    }
+    indexes
 }
 
 unsafe fn create_program(gl: &Gl, desc: &PipelineDescriptor<Backend>) -> Result<ProgramId, String> {
@@ -206,23 +246,56 @@ unsafe fn gen_vao(gl: &Gl) -> VaoId {
 }
 
 
+#[derive(Debug)]
+pub struct OpenGlDescriptorSetLayout {
+    layout: HashMap<u32, interface::DescriptorSetLayoutBinding>
+}
+
+impl OpenGlDescriptorSetLayout {
+    pub fn new(bindings: &[interface::DescriptorSetLayoutBinding]) -> Self {
+        let mut map = HashMap::with_capacity(bindings.len());
+        for b in bindings {
+            map.insert(b.binding, (b).clone());
+        }
+        OpenGlDescriptorSetLayout { layout: map }
+    }
+}
 
 #[derive(Debug)]
-pub struct OpenGlDescriptorSetLayout {}
+pub struct OpenGlPipelineLayout {
+    layout: HashMap<u32, (interface::DescriptorSetLayoutBinding, Option<interface::PipelineLayoutHint>)>
+}
 
-#[derive(Debug)]
-pub struct OpenGlPipelineLayout {}
+impl OpenGlPipelineLayout {
+    pub fn new<I>(desc_layout: &<Backend as interface::Backend>::DescriptorSetLayout, hints: I) -> Self
+        where
+            I: IntoIterator<Item=interface::PipelineLayoutHint>, {
+        let mut map: HashMap<u32, (interface::DescriptorSetLayoutBinding, Option<interface::PipelineLayoutHint>)>
+            = HashMap::with_capacity(desc_layout.layout.len());
+        for e in &desc_layout.layout {
+            map.insert(e.0.clone(), (e.1.clone(), None));
+        }
+
+
+        for h in hints {
+            let (desc, hint) = map.get(&h.location).unwrap();
+            map.insert(h.location, (desc.clone(), Some(h)));
+        }
+        OpenGlPipelineLayout { layout: map }
+    }
+}
 
 #[derive(Debug)]
 pub struct OpenGlDescriptorSet {}
 
-
+const DESCRIPTORS_LIMIT: usize = 10;
 
 #[derive(Debug)]
 enum OpenGlCommand {
     PreparePipeline(OpenGlPipeline),
-    BindVertexBuffer(usize, OpenGlBuffer),
+    BindVertexBuffer(u32, OpenGlBuffer),
     BindIndexBuffer(OpenGlBuffer),
+    BindDescriptorSet(Vec<u32>),
     DrawIndexed(u32, u32),
     ClearScreen((f32, f32, f32, f32)),
 }
@@ -265,6 +338,11 @@ impl OpenGlCommandBuffer {
                 ClearScreen((r, g, b, a)) => {
                     gl.ClearColor(*r, *g, *b, *a)
                 }
+                BindDescriptorSet(bindings) => {
+                    pipeline.as_mut()
+                        .unwrap()
+                        .bind_descriptors(gl, bindings);
+                }
             }
         }
     }
@@ -275,7 +353,7 @@ impl interface::CommandBuffer<Backend> for OpenGlCommandBuffer {
         self.cmds.push(PreparePipeline(pipeline.clone()));
     }
 
-    fn bind_vertex_buffer(&mut self, binding: usize, buffer: &<Backend as interface::Backend>::Buffer) {
+    fn bind_vertex_buffer(&mut self, binding: u32, buffer: &<Backend as interface::Backend>::Buffer) {
         self.cmds.push(BindVertexBuffer(binding, buffer.clone()))
     }
 
@@ -291,8 +369,12 @@ impl interface::CommandBuffer<Backend> for OpenGlCommandBuffer {
         self.cmds.push(DrawIndexed(count, offset))
     }
 
-    fn bind_descriptor_set(&self, pipeline_layout: &<Backend as interface::Backend>::PipelineLayout, desc_set: &<Backend as interface::Backend>::DescriptorSet) {
-        unimplemented!()
+    fn bind_descriptor_set(&mut self, pipeline_layout: &<Backend as interface::Backend>::PipelineLayout, desc_set: &<Backend as interface::Backend>::DescriptorSet) {
+        let bindings: Vec<u32> = (&pipeline_layout.layout)
+            .into_iter()
+            .map(|(binding, _)| *binding)
+            .collect();
+        self.cmds.push(BindDescriptorSet(bindings))
     }
 
     fn clear_screen(&mut self, color: (f32, f32, f32, f32)) {
@@ -301,3 +383,7 @@ impl interface::CommandBuffer<Backend> for OpenGlCommandBuffer {
 }
 
 
+fn to_gl_str(src: &str) -> *const c_char {
+    let string = src.to_owned() + "\0";
+    string.as_str().as_ptr() as *const c_char
+}

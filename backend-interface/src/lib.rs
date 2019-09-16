@@ -1,6 +1,7 @@
 pub extern crate imgui;
 
 use std::any::Any;
+use core::borrow::Borrow;
 use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -116,16 +117,16 @@ pub struct BufferDescriptor {
 
 
 #[derive(Debug)]
-pub struct PipelineDescriptor<B: Backend> {
+pub struct PipelineDescriptor<'a, B: Backend> {
     pub primitives: Primitive,
     pub shader_set: ShaderSet<B>,
-    pub layout: B::PipelineLayout,
+    pub layout: &'a B::PipelineLayout,
     pub vertex_buffers: Vec<VertexBufferDescriptor>,
     pub vertex_attributes: Vec<AttributeDescriptor>,
 }
 
-impl<B> PipelineDescriptor<B> where B: Backend {
-    pub fn new(primitive: Primitive, shader_set: ShaderSet<B>, layout: B::PipelineLayout) -> PipelineDescriptor<B> {
+impl<'a, B> PipelineDescriptor<'a, B> where B: Backend {
+    pub fn new(primitive: Primitive, shader_set: ShaderSet<B>, layout: &B::PipelineLayout) -> PipelineDescriptor<B> {
         PipelineDescriptor {
             primitives: primitive,
             shader_set: shader_set,
@@ -202,14 +203,27 @@ pub struct ShaderSet<B: Backend> {
     pub fragment: B::ShaderMod,
 }
 
+#[derive(Debug, Clone)]
 pub struct DescriptorSetLayoutBinding {
-    pub binding: u8,
+    pub binding: u32,
     pub desc: DescriptorType,
 }
 
+#[derive(Debug, Clone)]
 pub enum DescriptorType {
     UniformBuffer,
     Sampler,
+}
+
+#[derive(Debug, Clone)]
+pub struct PipelineLayoutHint {
+    pub location: u32,
+    pub hint: LayoutHint,
+}
+
+#[derive(Debug, Clone)]
+pub enum LayoutHint {
+    Name(&'static str)
 }
 
 pub trait RendererDevice<B: Backend> {
@@ -231,7 +245,14 @@ pub trait RendererDevice<B: Backend> {
 
     fn create_shader_mod(&self, desc: ShaderModDescriptor) -> B::ShaderMod;
     fn create_descriptor_set_layout(&self, bindings: &[DescriptorSetLayoutBinding]) -> B::DescriptorSetLayout;
-    fn create_pipeline_layout(&self, desc_layout: &B::DescriptorSetLayout) -> B::PipelineLayout;
+
+    fn create_pipeline_layout<I>(
+        &self,
+        desc_layout: &B::DescriptorSetLayout,
+        hints: I,
+    ) -> B::PipelineLayout
+        where
+            I: IntoIterator<Item = PipelineLayoutHint>;
 
 
     fn write_descriptor_set(&self, desc_set_write: DescriptorSetWrite<B>);
@@ -249,11 +270,11 @@ pub enum Descriptor<'a, B: Backend> {
 
 pub trait CommandBuffer<B: Backend> {
     fn prepare_pipeline(&mut self, pipeline: &B::Pipeline);
-    fn bind_vertex_buffer(&mut self, binding: usize, buffer: &B::Buffer);
+    fn bind_vertex_buffer(&mut self, binding: u32, buffer: &B::Buffer);
     fn bind_index_buffer(&mut self, buffer: &B::Buffer);
     fn buffer_data(&mut self, buffer: &B::Buffer, data: &[u8]);
     fn draw_indexed(&mut self, count: u32, offset: u32);
-    fn bind_descriptor_set(&self, pipeline_layout: &B::PipelineLayout, desc_set: &B::DescriptorSet);
+    fn bind_descriptor_set(&mut self, pipeline_layout: &B::PipelineLayout, desc_set: &B::DescriptorSet);
     fn clear_screen(&mut self, color: (f32, f32, f32, f32));
 }
 
