@@ -2,6 +2,8 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 uv;
 layout (location = 2) in vec3 normal;
+//instanced
+layout (location = 3) in mat4 mvp;
 
 out vec4 out_Color;
 
@@ -17,6 +19,6 @@ layout (std140) uniform Matricies {
 } matrix;
 
 void main() {
-    gl_Position = matrix.projection * matrix.view * matrix.trans * vec4(position, 1.0);
+    gl_Position = mvp * vec4(position, 1.0);
     out_Color = vec4(normal.xyz, uv.x);
 }

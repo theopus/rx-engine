@@ -273,7 +273,7 @@ pub trait CommandBuffer<B: Backend> {
     fn bind_vertex_buffer(&mut self, binding: u32, buffer: &B::Buffer);
     fn bind_index_buffer(&mut self, buffer: &B::Buffer);
     fn buffer_data(&mut self, buffer: &B::Buffer, data: &[u8]);
-    fn draw_indexed(&mut self, count: u32, offset: u32);
+    fn draw_indexed(&mut self, count: u32, offset: u32, number: u32);
     fn bind_descriptor_set(&mut self, pipeline_layout: &B::PipelineLayout, desc_set: &B::DescriptorSet);
     fn clear_screen(&mut self, color: (f32, f32, f32, f32));
 }

@@ -2,6 +2,8 @@ use core::borrow::Borrow;
 use std::collections::HashMap;
 use std::ffi::c_void;
 use std::fmt;
+use std::mem::size_of;
+use std::os::raw::c_char;
 
 use itertools::Itertools;
 
@@ -13,8 +15,7 @@ use interface::VertexBufferDescriptor;
 
 use crate::Backend;
 use crate::buffer_v2::OpenGlBuffer;
-use crate::pipeline::OpenGlCommand::{BindDescriptorSet, BindIndexBuffer, BindVertexBuffer, ClearScreen, DrawIndexed, PreparePipeline};
-use std::os::raw::c_char;
+use crate::pipeline::OpenGlCommand::{BindDescriptorSet, BindIndexBuffer, BindVertexBuffer, ClearScreen, DrawIndexed, DrawIndexedInstanced, PreparePipeline};
 
 type GlPrimitive = gl::types::GLenum;
 type VaoId = gl::types::GLuint;
@@ -76,6 +77,9 @@ impl OpenGlPipeline {
     pub unsafe fn prepare(&self, gl: &Gl) {
         gl.BindVertexArray(self.vao_id);
         gl.UseProgram(self.program_id);
+        gl.Enable(gl::CULL_FACE);
+        gl.CullFace(gl::BACK);
+        gl.Enable(gl::DEPTH_TEST)
     }
 
     pub unsafe fn bind_index(&mut self, buffer: &OpenGlBuffer, gl: &Gl) {
@@ -101,26 +105,54 @@ impl OpenGlPipeline {
         if !self.binding_cache.contains_key(&binding) {
             buffer.bind(gl);
             for attr in attrs {
-                //TODO: Handle matrix case
-                gl.VertexAttribPointer(attr.location.into(),
-                                       match attr.data.data_type {
-                                           interface::DataType::Vec3f32 => 3,
-                                           interface::DataType::Vec2f32 => 2,
-                                           interface::DataType::Mat4f32 => 4,
-                                       },
-                                       match attr.data.data_type {
-                                           interface::DataType::Vec3f32 => gl::FLOAT,
-                                           interface::DataType::Vec2f32 => gl::FLOAT,
-                                           interface::DataType::Mat4f32 => gl::FLOAT,
-                                       },
-                                       gl::FALSE,
-                                       buff.stride as i32,
-                                       attr.data.offset as *const c_void);
-                gl.EnableVertexAttribArray(attr.location.into());
-            }
+                match attr.data.data_type {
+                    interface::DataType::Vec3f32 => {
+                        OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset, attr.location);
+                    }
+                    interface::DataType::Vec2f32 => {
+                        OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset, attr.location);
+                    }
+                    interface::DataType::Mat4f32 => {
+                        OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset + size_of::<[f32; 4]>() * 0, attr.location + 0);
+                        OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset + size_of::<[f32; 4]>() * 1, attr.location + 1);
+                        OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset + size_of::<[f32; 4]>() * 2, attr.location + 2);
+                        OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset + size_of::<[f32; 4]>() * 3, attr.location + 3);
+                        gl.VertexAttribDivisor(attr.location + 0, 1);
+                        gl.VertexAttribDivisor(attr.location + 1, 1);
+                        gl.VertexAttribDivisor(attr.location + 2, 1);
+                        gl.VertexAttribDivisor(attr.location + 3, 1);
+                    }
+                };
+            };
 
             self.binding_cache.insert(binding, buffer.id);
+        } else {
+            println!("{:?}", self.binding_cache);
         }
+    }
+
+    unsafe fn vertex_pointer(
+        gl: &Gl,
+        buff: &VertexBufferDescriptor,
+        attr: &AttributeDescriptor,
+        offset: usize,
+        location: u32,
+    ) {
+        gl.VertexAttribPointer(location.into(),
+                               match attr.data.data_type {
+                                   interface::DataType::Vec3f32 => 3,
+                                   interface::DataType::Vec2f32 => 2,
+                                   interface::DataType::Mat4f32 => 4,
+                               },
+                               match attr.data.data_type {
+                                   interface::DataType::Vec3f32 => gl::FLOAT,
+                                   interface::DataType::Vec2f32 => gl::FLOAT,
+                                   interface::DataType::Mat4f32 => gl::FLOAT,
+                               },
+                               gl::FALSE,
+                               buff.stride as i32,
+                               offset as *const c_void);
+        gl.EnableVertexAttribArray(location.into());
     }
 }
 
@@ -297,6 +329,7 @@ enum OpenGlCommand {
     BindIndexBuffer(OpenGlBuffer),
     BindDescriptorSet(Vec<u32>),
     DrawIndexed(u32, u32),
+    DrawIndexedInstanced(u32, u32, u32),
     ClearScreen((f32, f32, f32, f32)),
 }
 
@@ -336,12 +369,22 @@ impl OpenGlCommandBuffer {
                     )
                 }
                 ClearScreen((r, g, b, a)) => {
-                    gl.ClearColor(*r, *g, *b, *a)
+                    gl.ClearColor(*r, *g, *b, *a);
+                    gl.Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
                 }
                 BindDescriptorSet(bindings) => {
                     pipeline.as_mut()
                         .unwrap()
                         .bind_descriptors(gl, bindings);
+                }
+                OpenGlCommand::DrawIndexedInstanced(count, offset, number) => {
+                    gl.DrawElementsInstanced(
+                        pipeline.as_ref().unwrap().primitive,
+                        *count as i32,
+                        gl::UNSIGNED_INT,
+                        *offset as *const c_void,
+                        *number as i32,
+                    )
                 }
             }
         }
@@ -365,8 +408,12 @@ impl interface::CommandBuffer<Backend> for OpenGlCommandBuffer {
         unimplemented!()
     }
 
-    fn draw_indexed(&mut self, count: u32, offset: u32) {
-        self.cmds.push(DrawIndexed(count, offset))
+    fn draw_indexed(&mut self, count: u32, offset: u32, number: u32) {
+        if number > 1 {
+            self.cmds.push(DrawIndexedInstanced(count, offset, number));
+        } else {
+            self.cmds.push(DrawIndexed(count, offset));
+        }
     }
 
     fn bind_descriptor_set(&mut self, pipeline_layout: &<Backend as interface::Backend>::PipelineLayout, desc_set: &<Backend as interface::Backend>::DescriptorSet) {

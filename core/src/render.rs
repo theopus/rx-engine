@@ -25,6 +25,7 @@ pub struct Renderer {
     index: backend::Buffer,
     index_count: usize,
     uniform: backend::Buffer,
+    instanced: backend::Buffer,
 
     pipeline_layout: backend::PipelineLayout,
     desc_set: backend::DescriptorSet,
@@ -52,6 +53,10 @@ impl Renderer {
         let uniform = device.create_buffer(interface::BufferDescriptor {
             size: 1024,
             usage: interface::Usage::Uniform,
+        });
+        let instanced = device.create_buffer(interface::BufferDescriptor {
+            size: 16 * 4 * 20_000,
+            usage: interface::Usage::Vertex,
         });
 
         #[derive(Debug)]
@@ -143,6 +148,11 @@ impl Renderer {
                 stride: size_of::<Vertex>(),
             });
 
+            pipeline_desc.push_vb(interface::VertexBufferDescriptor {
+                binding: 1,
+                stride: size_of::<[[f32; 4]; 4]>(),
+            });
+
             pipeline_desc.push_attr(interface::AttributeDescriptor {
                 binding: 0,
                 location: 0,
@@ -167,6 +177,15 @@ impl Renderer {
                 data: interface::VertexData {
                     offset: size_of::<[f32; 3]>() + size_of::<[f32; 2]>(),
                     data_type: interface::DataType::Vec3f32,
+                },
+            });
+
+            pipeline_desc.push_attr(interface::AttributeDescriptor {
+                binding: 1,
+                location: 3,
+                data: interface::VertexData {
+                    offset: 0,
+                    data_type: interface::DataType::Mat4f32,
                 },
             });
 
@@ -199,6 +218,7 @@ impl Renderer {
                 view: glm::identity(),
                 projection: glm::identity(),
             },
+            instanced,
         }
     }
 }
@@ -237,8 +257,19 @@ impl Renderer {
         cmd_buffer.bind_descriptor_set(&self.pipeline_layout, &self.desc_set);
 
         cmd_buffer.bind_vertex_buffer(0, &self.vertex);
+        cmd_buffer.bind_vertex_buffer(1, &self.instanced);
         cmd_buffer.bind_index_buffer(&self.index);
-        for cmd in self.receiver.try_iter() {
+
+        unsafe {
+            std::ptr::copy(frame.view.as_slice().as_ptr() as *mut u8, u_ptr, 1 * 16 * size_of::<u32>());
+            std::ptr::copy(frame.projection.as_slice().as_ptr() as *mut u8, u_ptr.offset(1 * 16 * 4), 1 * 16 * size_of::<u32>());
+        }
+
+        let vp = frame.projection * frame.view;
+        let mapped = device.map_buffer(&self.instanced);
+
+        let mut n = 0;
+        for (i, cmd) in self.receiver.try_iter().enumerate() {
 //            let va: &backend::VertexArray = ctx.storage().get_ref(&cmd.0).unwrap();
 //            let instance = cmd.1;
 //            let material: &Material = ctx.storage().get_ref(instance.material()).unwrap();
@@ -253,17 +284,16 @@ impl Renderer {
 //            shader.load_mat4("r_transformation", cmd.2.as_slice());
 //            self.api.draw_indexed(va);
 //            shader.unbind();
-
-
-
             unsafe {
-                std::ptr::copy(frame.view.as_slice().as_ptr() as *mut u8, u_ptr, 1 * 16 * size_of::<u32>());
-                std::ptr::copy(frame.projection.as_slice().as_ptr() as *mut u8, u_ptr.offset(1 * 16 * 4), 1 * 16 * size_of::<u32>());
-                std::ptr::copy(cmd.2.as_slice().as_ptr() as *mut u8, u_ptr.offset(2 * 16 * 4), 1 * 16 * size_of::<u32>());
-            }
-            cmd_buffer.draw_indexed(self.index_count as u32, 0);
+                std::ptr::copy((vp * cmd.2).as_slice().as_ptr() as *mut u8, mapped.offset(((i as u32) * 16 * 4) as isize), 1 * 16 * size_of::<u32>());
+            };
+            n = i;
         }
+
+        cmd_buffer.draw_indexed(self.index_count as u32, 0, (n + 1) as u32);
+
         device.unmap_buffer(&self.uniform);
+        device.unmap_buffer(&self.instanced);
         device.execute(cmd_buffer)
     }
 
