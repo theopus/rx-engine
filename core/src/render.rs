@@ -55,7 +55,7 @@ impl Renderer {
             usage: interface::Usage::Uniform,
         });
         let instanced = device.create_buffer(interface::BufferDescriptor {
-            size: 16 * 4 * 20_000,
+            size: 16 * 4 * 30000,
             usage: interface::Usage::Vertex,
         });
 

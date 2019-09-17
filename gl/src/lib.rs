@@ -1104,6 +1104,8 @@ pub Disablei: FnPtr,
 pub DrawArrays: FnPtr,
 /// Fallbacks: DrawArraysInstancedANGLE, DrawArraysInstancedARB, DrawArraysInstancedEXT, DrawArraysInstancedNV
 pub DrawArraysInstanced: FnPtr,
+/// Fallbacks: DrawArraysInstancedBaseInstanceEXT
+pub DrawArraysInstancedBaseInstance: FnPtr,
 pub DrawBuffer: FnPtr,
 /// Fallbacks: DrawBuffersARB, DrawBuffersATI, DrawBuffersEXT
 pub DrawBuffers: FnPtr,
@@ -1112,8 +1114,12 @@ pub DrawElements: FnPtr,
 pub DrawElementsBaseVertex: FnPtr,
 /// Fallbacks: DrawElementsInstancedANGLE, DrawElementsInstancedARB, DrawElementsInstancedEXT, DrawElementsInstancedNV
 pub DrawElementsInstanced: FnPtr,
+/// Fallbacks: DrawElementsInstancedBaseInstanceEXT
+pub DrawElementsInstancedBaseInstance: FnPtr,
 /// Fallbacks: DrawElementsInstancedBaseVertexEXT, DrawElementsInstancedBaseVertexOES
 pub DrawElementsInstancedBaseVertex: FnPtr,
+/// Fallbacks: DrawElementsInstancedBaseVertexBaseInstanceEXT
+pub DrawElementsInstancedBaseVertexBaseInstance: FnPtr,
 /// Fallbacks: DrawRangeElementsEXT
 pub DrawRangeElements: FnPtr,
 /// Fallbacks: DrawRangeElementsBaseVertexEXT, DrawRangeElementsBaseVertexOES
@@ -1700,12 +1706,15 @@ DisableVertexAttribArray: FnPtr::new(metaloadfn("glDisableVertexAttribArray", &[
 Disablei: FnPtr::new(metaloadfn("glDisablei", &["glDisableIndexedEXT", "glDisableiEXT", "glDisableiNV", "glDisableiOES"])),
 DrawArrays: FnPtr::new(metaloadfn("glDrawArrays", &["glDrawArraysEXT"])),
 DrawArraysInstanced: FnPtr::new(metaloadfn("glDrawArraysInstanced", &["glDrawArraysInstancedANGLE", "glDrawArraysInstancedARB", "glDrawArraysInstancedEXT", "glDrawArraysInstancedNV"])),
+DrawArraysInstancedBaseInstance: FnPtr::new(metaloadfn("glDrawArraysInstancedBaseInstance", &["glDrawArraysInstancedBaseInstanceEXT"])),
 DrawBuffer: FnPtr::new(metaloadfn("glDrawBuffer", &[])),
 DrawBuffers: FnPtr::new(metaloadfn("glDrawBuffers", &["glDrawBuffersARB", "glDrawBuffersATI", "glDrawBuffersEXT"])),
 DrawElements: FnPtr::new(metaloadfn("glDrawElements", &[])),
 DrawElementsBaseVertex: FnPtr::new(metaloadfn("glDrawElementsBaseVertex", &["glDrawElementsBaseVertexEXT", "glDrawElementsBaseVertexOES"])),
 DrawElementsInstanced: FnPtr::new(metaloadfn("glDrawElementsInstanced", &["glDrawElementsInstancedANGLE", "glDrawElementsInstancedARB", "glDrawElementsInstancedEXT", "glDrawElementsInstancedNV"])),
+DrawElementsInstancedBaseInstance: FnPtr::new(metaloadfn("glDrawElementsInstancedBaseInstance", &["glDrawElementsInstancedBaseInstanceEXT"])),
 DrawElementsInstancedBaseVertex: FnPtr::new(metaloadfn("glDrawElementsInstancedBaseVertex", &["glDrawElementsInstancedBaseVertexEXT", "glDrawElementsInstancedBaseVertexOES"])),
+DrawElementsInstancedBaseVertexBaseInstance: FnPtr::new(metaloadfn("glDrawElementsInstancedBaseVertexBaseInstance", &["glDrawElementsInstancedBaseVertexBaseInstanceEXT"])),
 DrawRangeElements: FnPtr::new(metaloadfn("glDrawRangeElements", &["glDrawRangeElementsEXT"])),
 DrawRangeElementsBaseVertex: FnPtr::new(metaloadfn("glDrawRangeElementsBaseVertex", &["glDrawRangeElementsBaseVertexEXT", "glDrawRangeElementsBaseVertexOES"])),
 Enable: FnPtr::new(metaloadfn("glEnable", &[])),
@@ -2154,6 +2163,8 @@ _priv: ()
 #[allow(non_snake_case, unused_variables, dead_code)]
             #[inline] pub unsafe fn DrawArraysInstanced(&self, mode: types::GLenum, first: types::GLint, count: types::GLsizei, instancecount: types::GLsizei) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLenum, types::GLint, types::GLsizei, types::GLsizei) -> ()>(self.DrawArraysInstanced.f)(mode, first, count, instancecount) }
 #[allow(non_snake_case, unused_variables, dead_code)]
+            #[inline] pub unsafe fn DrawArraysInstancedBaseInstance(&self, mode: types::GLenum, first: types::GLint, count: types::GLsizei, instancecount: types::GLsizei, baseinstance: types::GLuint) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLenum, types::GLint, types::GLsizei, types::GLsizei, types::GLuint) -> ()>(self.DrawArraysInstancedBaseInstance.f)(mode, first, count, instancecount, baseinstance) }
+#[allow(non_snake_case, unused_variables, dead_code)]
             #[inline] pub unsafe fn DrawBuffer(&self, buf: types::GLenum) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLenum) -> ()>(self.DrawBuffer.f)(buf) }
 #[allow(non_snake_case, unused_variables, dead_code)]
             #[inline] pub unsafe fn DrawBuffers(&self, n: types::GLsizei, bufs: *const types::GLenum) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLsizei, *const types::GLenum) -> ()>(self.DrawBuffers.f)(n, bufs) }
@@ -2164,7 +2175,11 @@ _priv: ()
 #[allow(non_snake_case, unused_variables, dead_code)]
             #[inline] pub unsafe fn DrawElementsInstanced(&self, mode: types::GLenum, count: types::GLsizei, type_: types::GLenum, indices: *const __gl_imports::raw::c_void, instancecount: types::GLsizei) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLenum, types::GLsizei, types::GLenum, *const __gl_imports::raw::c_void, types::GLsizei) -> ()>(self.DrawElementsInstanced.f)(mode, count, type_, indices, instancecount) }
 #[allow(non_snake_case, unused_variables, dead_code)]
+            #[inline] pub unsafe fn DrawElementsInstancedBaseInstance(&self, mode: types::GLenum, count: types::GLsizei, type_: types::GLenum, indices: *const __gl_imports::raw::c_void, instancecount: types::GLsizei, baseinstance: types::GLuint) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLenum, types::GLsizei, types::GLenum, *const __gl_imports::raw::c_void, types::GLsizei, types::GLuint) -> ()>(self.DrawElementsInstancedBaseInstance.f)(mode, count, type_, indices, instancecount, baseinstance) }
+#[allow(non_snake_case, unused_variables, dead_code)]
             #[inline] pub unsafe fn DrawElementsInstancedBaseVertex(&self, mode: types::GLenum, count: types::GLsizei, type_: types::GLenum, indices: *const __gl_imports::raw::c_void, instancecount: types::GLsizei, basevertex: types::GLint) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLenum, types::GLsizei, types::GLenum, *const __gl_imports::raw::c_void, types::GLsizei, types::GLint) -> ()>(self.DrawElementsInstancedBaseVertex.f)(mode, count, type_, indices, instancecount, basevertex) }
+#[allow(non_snake_case, unused_variables, dead_code)]
+            #[inline] pub unsafe fn DrawElementsInstancedBaseVertexBaseInstance(&self, mode: types::GLenum, count: types::GLsizei, type_: types::GLenum, indices: *const __gl_imports::raw::c_void, instancecount: types::GLsizei, basevertex: types::GLint, baseinstance: types::GLuint) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLenum, types::GLsizei, types::GLenum, *const __gl_imports::raw::c_void, types::GLsizei, types::GLint, types::GLuint) -> ()>(self.DrawElementsInstancedBaseVertexBaseInstance.f)(mode, count, type_, indices, instancecount, basevertex, baseinstance) }
 #[allow(non_snake_case, unused_variables, dead_code)]
             #[inline] pub unsafe fn DrawRangeElements(&self, mode: types::GLenum, start: types::GLuint, end: types::GLuint, count: types::GLsizei, type_: types::GLenum, indices: *const __gl_imports::raw::c_void) -> () { __gl_imports::mem::transmute::<_, extern "system" fn(types::GLenum, types::GLuint, types::GLuint, types::GLsizei, types::GLenum, *const __gl_imports::raw::c_void) -> ()>(self.DrawRangeElements.f)(mode, start, end, count, type_, indices) }
 #[allow(non_snake_case, unused_variables, dead_code)]

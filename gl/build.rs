@@ -14,14 +14,13 @@ fn main() {
             .join("..")
             .join("..")
             .join("..")
-            .join("..")
             .join("gl")
             .join("src")
             .join("lib.rs")
         )
             .unwrap();
 
-        Registry::new(Api::Gl, (3, 3), Profile::Core, Fallbacks::All, [])
+        Registry::new(Api::Gl, (3, 3), Profile::Core, Fallbacks::All, ["GL_ARB_base_instance"])
             .write_bindings(StructGenerator, &mut file)
             .unwrap();
     }

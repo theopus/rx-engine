@@ -41,6 +41,8 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
 
+
+
         let (mut window, events) = glfw.with_primary_monitor(|glfw, m| {
             glfw.create_window(config.width, config.height, "Hello this is window",
 //                               m.map_or(
@@ -48,6 +50,8 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
 //                                   |m| glfw::WindowMode::FullScreen(m))
             )
         }).expect("Failed to create GLFW window.");
+
+
 
         window.set_framebuffer_size_polling(true);
         window.set_cursor_pos_polling(true);
@@ -59,6 +63,8 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
 
         glfw.make_context_current(Option::from(&window));
         glfw.set_swap_interval(SwapInterval::Sync(0));
+
+        println!("GL_ARB_base_instance support: {}", glfw.extension_supported("GL_ARB_base_instance"));
 
         use std::rc::Rc;
         window.show();

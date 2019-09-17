@@ -366,7 +366,7 @@ impl OpenGlCommandBuffer {
                         *count as i32,
                         gl::UNSIGNED_INT,
                         *offset as *const c_void,
-                    )
+                    );
                 }
                 ClearScreen((r, g, b, a)) => {
                     gl.ClearColor(*r, *g, *b, *a);
