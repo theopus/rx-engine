@@ -13,7 +13,7 @@ impl OpenGlBuffer {
     pub fn new(gl: &gl::Gl, desc: interface::BufferDescriptor) -> OpenGlBuffer {
         unsafe {
             let id = Self::generate(gl);
-            let buffer = OpenGlBuffer { id, target: crate::buffer::to_gl_buffer_type(&desc.usage), usage: gl::STATIC_DRAW, size: desc.size };
+            let buffer = OpenGlBuffer { id, target: to_gl_buffer_type(&desc.usage), usage: gl::STATIC_DRAW, size: desc.size };
             buffer.bind(gl);
             Self::buffer_empty(gl, &buffer);
             buffer
@@ -41,5 +41,13 @@ impl OpenGlBuffer {
 
     pub fn unmap(gl: Rc<gl::Gl>, buffer: &OpenGlBuffer) {
         unsafe { gl.UnmapBuffer(buffer.target); };
+    }
+}
+
+pub(crate) fn to_gl_buffer_type(u: &interface::Usage) -> u32 {
+    match u {
+        interface::Usage::Vertex => gl::ARRAY_BUFFER,
+        interface::Usage::Index => gl::ELEMENT_ARRAY_BUFFER,
+        interface::Usage::Uniform => gl::UNIFORM_BUFFER
     }
 }

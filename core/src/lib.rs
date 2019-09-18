@@ -14,14 +14,12 @@ pub extern crate specs_derive;
 
 //pub mod backend;
 pub mod render;
-pub mod material;
 
 ///internal
 pub mod run;
 pub mod utils;
 pub mod ecs;
 pub mod loader;
-pub mod asset;
 pub mod mesh;
 
 mod layer;

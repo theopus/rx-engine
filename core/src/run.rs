@@ -1,6 +1,5 @@
 use interface::{Event, ImGuiRenderer, PlatformManager, RendererApi, RendererDevice, WindowConfig};
 
-use crate::asset::AssetHolder;
 use crate::ecs::layer::EcsLayerBuilder;
 use crate::render::{Frame, Renderer};
 
@@ -25,7 +24,6 @@ pub struct EngineContext {
     pub renderer: Renderer,
     pub platform: backend::PlatformManager,
     pub renderer_device: backend::RendererDevice,
-    pub asset_holder: AssetHolder,
 }
 
 //TODO: TickContext;
@@ -68,8 +66,7 @@ impl<'l> RxEngine<'l> {
             ctx: EngineContext {
                 platform,
                 renderer: Renderer::new(render_api, &renderer_device),
-                renderer_device,
-                asset_holder: Default::default(),
+                renderer_device
             },
             #[cfg(feature = "imgui_debug")]
             imgui_ctx: ImGuiContext { imgui, imgui_renderer: renderer },
@@ -104,7 +101,7 @@ impl<'l> RxEngine<'l> {
             self.layer_dispatcher.run_layers(&mut frame, &mut self.ctx);
 
 
-            self.ctx.renderer.process_frame(&self.ctx.renderer_device, &mut frame.frame, &mut self.ctx.asset_holder);
+            self.ctx.renderer.process_frame(&self.ctx.renderer_device, &mut frame.frame);
 
             #[cfg(feature = "imgui_debug")]
                 self.imgui_ctx.imgui_renderer.render(frame.ui);

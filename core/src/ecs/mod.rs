@@ -56,10 +56,7 @@ impl Default for ActiveCamera {
 pub mod components {
     use na::Matrix4;
     use specs::{Component, VecStorage};
-
-    use crate::asset::AssetPtr;
     use crate::ecs::ActiveCamera;
-    use crate::material::MaterialInstance;
 
     #[derive(Component, Debug)]
     #[storage(VecStorage)]
@@ -129,7 +126,7 @@ pub mod components {
     #[derive(Component)]
     #[storage(VecStorage)]
     pub struct Render {
-        pub va: AssetPtr<backend::VertexArray>,
-        pub material: MaterialInstance,
+        pub va: u32,
+        pub material: u32,
     }
 }

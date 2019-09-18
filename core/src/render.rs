@@ -7,15 +7,13 @@ use std::{
 };
 use std::mem::size_of;
 
-use interface::{CommandBuffer, RendererApi, RendererDevice, Shader};
+use interface::{CommandBuffer, RendererApi, RendererDevice};
 
-use crate::asset::{AssetHolder, AssetPtr};
 use crate::loader::Loader;
-use crate::material::{Material, MaterialInstance};
 use crate::Matrix4f;
 use crate::utils::relative_to_current_path;
 
-pub type DrawIndexed = (AssetPtr<backend::VertexArray>, MaterialInstance, Matrix4f);
+pub type DrawIndexed = (u32, u32, Matrix4f);
 
 pub struct Renderer {
     api: backend::RendererApi,
@@ -248,7 +246,7 @@ impl Renderer {
         self.sender.send(cmd);
     }
 
-    pub fn process(&self, device: &backend::RendererDevice, ctx: &mut AssetHolder, frame: &mut Frame) {
+    pub fn process(&self, device: &backend::RendererDevice, frame: &mut Frame) {
         let mut cmd_buffer = device.create_cmd_buffer();
         let u_ptr = device.map_buffer(&self.uniform);
 
@@ -310,8 +308,8 @@ impl Renderer {
         }
     }
 
-    pub fn process_frame(&mut self, device: &backend::RendererDevice, frame: &mut Frame, ctx: &mut AssetHolder) {
-        self.process(device, ctx, frame);
+    pub fn process_frame(&mut self, device: &backend::RendererDevice, frame: &mut Frame) {
+        self.process(device, frame);
     }
 
     pub fn end(&mut self, frame: Frame) {
