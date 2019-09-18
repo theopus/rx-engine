@@ -5,8 +5,8 @@ use std::rc::Rc;
 pub struct OpenGlBuffer {
     pub(crate)id: u32,
     pub(crate)target: u32,
-    usage: u32,
-    size: u32,
+    pub(crate)usage: u32,
+    pub(crate)size: u32,
 }
 
 impl OpenGlBuffer {

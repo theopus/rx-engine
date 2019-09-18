@@ -26,15 +26,15 @@ pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send
     type DescriptorSetLayout: Send + Sync + Debug;
     type PipelineLayout: Send + Sync + Debug;
     //
-    type Surface: Send + Sync + Debug;
-    type Swapchain: Send + Sync + Debug;
+    type Surface;
+    type Swapchain: Swapchain<Self>;
+    type Framebuffer: Send + Sync + Debug;
 }
 
 pub struct WindowConfig {
     pub width: u32,
     pub height: u32,
 }
-
 
 pub type Code = u32;
 
@@ -58,17 +58,7 @@ pub trait ImGuiRenderer {
     fn handle_events(&mut self, imgui: &mut imgui::Context);
 }
 
-pub trait PlatformManager<B: Backend> {
-    fn new(config: WindowConfig) -> B::PlatformManager;
-    fn create_renderer(&mut self) -> (B::RendererApi, B::RendererDevice);
-    fn should_close(&self) -> bool;
-    fn poll_events(&self) -> Vec<Event>;
-    fn current_time(&self) -> f64;
-    fn current_time_ms(&self) -> f64 {
-        self.current_time() * 1000f64
-    }
-    fn imgui_renderer(&mut self, imgui: &mut imgui::Context) -> B::ImGuiRenderer;
-}
+
 
 #[derive(Debug)]
 pub struct BufferDescriptor {
@@ -187,13 +177,34 @@ pub enum LayoutHint {
     Name(&'static str)
 }
 
+pub struct DescriptorSetWrite<'a, B: Backend> {
+    pub set: &'a B::DescriptorSet,
+    pub binding: u32,
+    pub descriptor: Descriptor<'a, B>,
+}
+
+pub enum Descriptor<'a, B: Backend> {
+    Buffer(&'a B::Buffer)
+}
+
+pub trait PlatformManager<B: Backend> {
+    fn new(config: WindowConfig) -> B::PlatformManager;
+    fn create_renderer(&mut self) -> (B::RendererApi, B::RendererDevice);
+    fn should_close(&self) -> bool;
+    fn poll_events(&self) -> Vec<Event>;
+    fn current_time(&self) -> f64;
+    fn current_time_ms(&self) -> f64 {
+        self.current_time() * 1000f64
+    }
+    fn create_surface(&self) -> B::Surface;
+    fn imgui_renderer(&mut self, imgui: &mut imgui::Context) -> B::ImGuiRenderer;
+}
+
 pub trait RendererDevice<B: Backend> {
-    ///
     fn create_buffer(&self, desc: BufferDescriptor) -> B::Buffer;
     fn map_buffer(&self, buffer: &B::Buffer) -> *mut u8;
     fn unmap_buffer(&self, buffer: &B::Buffer);
     fn create_pipeline(&self, desc: PipelineDescriptor<B>) -> B::Pipeline;
-
     //make pooled
     fn create_cmd_buffer(&self) -> B::CommandBuffer;
     //make pooled
@@ -213,16 +224,15 @@ pub trait RendererDevice<B: Backend> {
 
 
     fn write_descriptor_set(&self, desc_set_write: DescriptorSetWrite<B>);
+
+    fn create_swapchain(
+        &self,
+        surface: &B::Surface
+    ) -> B::Swapchain;
 }
 
-pub struct DescriptorSetWrite<'a, B: Backend> {
-    pub set: &'a B::DescriptorSet,
-    pub binding: u32,
-    pub descriptor: Descriptor<'a, B>,
-}
-
-pub enum Descriptor<'a, B: Backend> {
-    Buffer(&'a B::Buffer)
+pub trait Swapchain<B: Backend> {
+    fn present(&mut self, frame_index: u32);
 }
 
 pub trait CommandBuffer<B: Backend> {

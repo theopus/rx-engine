@@ -25,6 +25,7 @@ mod shader_mod;
 mod imgui_glfw;
 mod imgui_glfw_render;
 mod pipeline;
+mod swapchain;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Backend {}
@@ -42,6 +43,7 @@ impl backend_interface::Backend for Backend {
     type DescriptorSet = pipeline::OpenGlDescriptorSet;
     type DescriptorSetLayout = pipeline::OpenGlDescriptorSetLayout;
     type PipelineLayout = pipeline::OpenGlPipelineLayout;
-    type Surface = ();
-    type Swapchain = ();
+    type Surface = swapchain::OpenGlSurface;
+    type Swapchain = swapchain::OpenGlSwapchain;
+    type Framebuffer = swapchain::OpenGlFramebuffer;
 }
