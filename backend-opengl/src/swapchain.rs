@@ -12,7 +12,7 @@ pub struct OpenGlSwapchain {
 }
 
 impl OpenGlSwapchain {
-    pub fn new(surface: &mut OpenGlSurface) -> Self {
+    pub fn new(surface: &OpenGlSurface) -> Self {
         OpenGlSwapchain {
             swap_buffers: (*surface.swap_buffers_fn)()
         }

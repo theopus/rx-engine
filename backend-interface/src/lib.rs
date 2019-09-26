@@ -1,7 +1,7 @@
 pub extern crate imgui;
 
-use std::any::Any;
 use core::borrow::Borrow;
+use std::any::Any;
 use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -18,7 +18,10 @@ pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send
     type PlatformManager: PlatformManager<Self>;
     type ImGuiRenderer: ImGuiRenderer;
     //
+    type Memory: Send + Sync;
     type Buffer: Send + Sync;
+    type Image: Send + Sync;
+    type ImageView: Send + Sync;
     type Pipeline: Send + Sync;
     type CommandBuffer: CommandBuffer<Self> + Send + Sync;
     type ShaderMod: Send + Sync + Debug;
@@ -57,7 +60,6 @@ pub trait ImGuiRenderer {
     fn render(&self, ui: imgui::Ui);
     fn handle_events(&mut self, imgui: &mut imgui::Context);
 }
-
 
 
 #[derive(Debug)]
@@ -220,16 +222,32 @@ pub trait RendererDevice<B: Backend> {
         hints: I,
     ) -> B::PipelineLayout
         where
-            I: IntoIterator<Item = PipelineLayoutHint>;
+            I: IntoIterator<Item=PipelineLayoutHint>;
 
 
     fn write_descriptor_set(&self, desc_set_write: DescriptorSetWrite<B>);
 
     fn create_swapchain(
         &self,
-        surface: &B::Surface
+        surface: &B::Surface,
     ) -> B::Swapchain;
+
+    fn create_image(
+        kind: image::Kind
+    ) -> B::Image;
 }
+
+pub mod image {
+    pub type Size = u32;
+    pub type Level = u16;
+
+    pub enum Kind {
+        D1(Size, Level),
+        D2(Size, Size, Level),
+        D3(Size, Size, Size),
+    }
+}
+
 
 pub trait Swapchain<B: Backend> {
     fn present(&mut self, frame_index: u32);

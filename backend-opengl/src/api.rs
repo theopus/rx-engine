@@ -79,7 +79,7 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn create_swapchain(&self, surface: &<Backend as interface::Backend>::Surface) -> <Backend as interface::Backend>::Swapchain {
-        unimplemented!()
+        crate::swapchain::OpenGlSwapchain::new(surface)
     }
 }
 

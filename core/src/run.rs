@@ -74,6 +74,9 @@ impl<'l> RxEngine<'l> {
         }
     }
     pub fn run(&mut self) {
+        let surface = self.ctx.platform.create_surface();
+        let mut swapchain = self.ctx.renderer_device.create_swapchain(&surface);
+
         let mut current: f64 = 0f64;
         let mut past: f64 = 0f64;
         while self.should_run() {
@@ -106,7 +109,9 @@ impl<'l> RxEngine<'l> {
             #[cfg(feature = "imgui_debug")]
                 self.imgui_ctx.imgui_renderer.render(frame.ui);
             self.ctx.renderer.end(frame.frame);
+            swapchain.present(0);
         }
+
     }
 
     pub fn add_layer_builder(&mut self, builder: impl LayerBuilder<'l>) {

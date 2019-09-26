@@ -140,11 +140,10 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
     }
 
     fn create_surface(&self) -> <Backend as interface::Backend>::Surface {
-
         let fun: Box<Fn() -> Box<FnMut()>> =  {
-            let mut window = self.window.clone();
+            let window = self.window.clone();
             Box::new(move || {
-                let mut w = window.clone();
+                let w = window.clone();
                 let mut ctx = w.borrow_mut().render_context();
                 Box::new(move || {ctx.swap_buffers()})
             })
