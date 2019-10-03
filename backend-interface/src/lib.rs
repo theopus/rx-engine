@@ -230,7 +230,10 @@ pub trait RendererDevice<B: Backend> {
     fn create_swapchain(
         &self,
         surface: &B::Surface,
-    ) -> B::Swapchain;
+    ) -> (
+        B::Swapchain,
+        Vec<B::Image>
+    );
 
     fn create_image(
         kind: image::Kind

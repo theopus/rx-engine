@@ -1,3 +1,4 @@
+use core::borrow::Borrow;
 use std::{fs, path::Path, rc::Rc, sync::mpsc::Receiver};
 use std::os::raw::c_void;
 
@@ -7,10 +8,7 @@ use backend_interface::{
     RendererDevice,
 };
 
-use crate::{
-    Backend,
-};
-use core::borrow::Borrow;
+use crate::Backend;
 
 #[derive(Clone)]
 pub struct OpenGLRendererDevice {
@@ -66,7 +64,7 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
 
     fn create_pipeline_layout<I>(&self, desc_layout: &<Backend as interface::Backend>::DescriptorSetLayout, hints: I) -> <Backend as interface::Backend>::PipelineLayout
         where
-            I: IntoIterator<Item = interface::PipelineLayoutHint>,{
+            I: IntoIterator<Item=interface::PipelineLayoutHint>, {
         crate::pipeline::OpenGlPipelineLayout::new(desc_layout, hints)
     }
 
@@ -78,8 +76,13 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
         };
     }
 
-    fn create_swapchain(&self, surface: &<Backend as interface::Backend>::Surface) -> <Backend as interface::Backend>::Swapchain {
-        crate::swapchain::OpenGlSwapchain::new(surface)
+    fn create_swapchain(&self, surface: &<Backend as interface::Backend>::Surface)
+                        -> (<Backend as interface::Backend>::Swapchain, Vec<<Backend as interface::Backend>::Image>) {
+        (crate::swapchain::OpenGlSwapchain::new(surface), Vec::new())
+    }
+
+    fn create_image(kind: interface::image::Kind) -> <Backend as interface::Backend>::Image {
+        unimplemented!()
     }
 }
 

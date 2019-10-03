@@ -313,7 +313,7 @@ impl Renderer {
     }
 
     pub fn end(&mut self, frame: Frame) {
-        self.api.swap_buffer();
+//        self.api.swap_buffer();
         self.last_frame = frame;
     }
 

@@ -41,7 +41,7 @@ impl backend_interface::Backend for Backend {
     type RendererDevice = api::OpenGLRendererDevice;
     type PlatformManager = platform_glfw::GlfwPlatformManager;
     type ImGuiRenderer = platform_glfw::GlfwImGuiRenderer;
-    type Memory = memory:OpenGlMemory;
+    type Memory = memory::OpenGlMemory;
     type Buffer = buffer_v2::OpenGlBuffer;
     type Image = image::OpenGlImage;
     type ImageView = image::OpenGlImageView;

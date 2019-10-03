@@ -1,4 +1,4 @@
-use interface::{Event, ImGuiRenderer, PlatformManager, RendererApi, RendererDevice, WindowConfig};
+use interface::{Event, ImGuiRenderer, PlatformManager, RendererApi, RendererDevice, WindowConfig, Swapchain};
 
 use crate::ecs::layer::EcsLayerBuilder;
 use crate::render::{Frame, Renderer};
@@ -109,7 +109,7 @@ impl<'l> RxEngine<'l> {
             #[cfg(feature = "imgui_debug")]
                 self.imgui_ctx.imgui_renderer.render(frame.ui);
             self.ctx.renderer.end(frame.frame);
-            swapchain.present(0);
+            swapchain.0.present(0);
         }
 
     }

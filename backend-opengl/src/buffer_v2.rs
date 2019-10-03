@@ -12,14 +12,6 @@ pub struct OpenGlBuffer {
 impl OpenGlBuffer {
     pub fn new(gl: &gl::Gl, desc: interface::BufferDescriptor) -> OpenGlBuffer {
         unsafe {
-            gl.TexImage2D(
-                target,
-                0,
-                    vformat,
-
-
-
-            )
             let id = Self::generate(gl);
             let buffer = OpenGlBuffer { id, target: to_gl_buffer_type(&desc.usage), usage: gl::STATIC_DRAW, size: desc.size };
             buffer.bind(gl);
