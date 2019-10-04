@@ -16,7 +16,7 @@ use rx_engine::{
         PlatformEvents,
     },
     glm,
-    interface::{
+    api::{
         Action,
         Event,
         RendererApi,

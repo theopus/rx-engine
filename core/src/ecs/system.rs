@@ -18,7 +18,7 @@ use crate::{
         DeltaTime,
         PlatformEvents,
     },
-    interface::Event,
+    api::Event,
     Matrix4f,
 };
 use crate::ecs::components::{Transformation, Velocity};

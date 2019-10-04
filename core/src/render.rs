@@ -7,7 +7,7 @@ use std::{
 };
 use std::mem::size_of;
 
-use interface::{CommandBuffer, RendererApi, RendererDevice};
+use api::{CommandBuffer, RendererApi, RendererDevice};
 
 use crate::loader::Loader;
 use crate::Matrix4f;
@@ -40,21 +40,24 @@ impl Renderer {
         let mut loader = Loader;
         let result = loader.load_obj(path_buf);
 
-        let static_mesh_buffer = device.create_buffer(interface::BufferDescriptor {
+
+//        device.allocate_memory(1024);
+
+        let static_mesh_buffer = device.create_buffer(api::BufferDescriptor {
             size: 1024,
-            usage: interface::Usage::Vertex,
+            usage: api::Usage::Vertex,
         });
-        let static_mesh_index_buffer = device.create_buffer(interface::BufferDescriptor {
+        let static_mesh_index_buffer = device.create_buffer(api::BufferDescriptor {
             size: 1024,
-            usage: interface::Usage::Index,
+            usage: api::Usage::Index,
         });
-        let uniform = device.create_buffer(interface::BufferDescriptor {
+        let uniform = device.create_buffer(api::BufferDescriptor {
             size: 1024,
-            usage: interface::Usage::Uniform,
+            usage: api::Usage::Uniform,
         });
-        let instanced = device.create_buffer(interface::BufferDescriptor {
+        let instanced = device.create_buffer(api::BufferDescriptor {
             size: 16 * 4 * 30000,
-            usage: interface::Usage::Vertex,
+            usage: api::Usage::Vertex,
         });
 
         #[derive(Debug)]
@@ -103,87 +106,86 @@ impl Renderer {
 
         let desc_set_layout = device.create_descriptor_set_layout(
             &[
-                interface::DescriptorSetLayoutBinding {
+                api::DescriptorSetLayoutBinding {
                     binding: 0,
-                    desc: interface::DescriptorType::UniformBuffer,
+                    desc: api::DescriptorType::UniformBuffer,
                 }
             ]);
 
         let pipeline_layout = device.create_pipeline_layout(
             &desc_set_layout,
             vec![
-                interface::PipelineLayoutHint {
+                api::PipelineLayoutHint {
                     location: 0,
-                    hint: interface::LayoutHint::Name("Matricies"),
+                    hint: api::LayoutHint::Name("Matricies"),
                 }
             ]);
 
         let pipeline = {
-            use interface;
             use std::mem::size_of;
             use std::fs;
 
 
-            let shader_set = interface::ShaderSet {
-                vertex: device.create_shader_mod(interface::ShaderModDescriptor {
-                    stype: interface::ShaderType::Vertex,
+            let shader_set = api::ShaderSet {
+                vertex: device.create_shader_mod(api::ShaderModDescriptor {
+                    stype: api::ShaderType::Vertex,
                     source: fs::read_to_string(&relative_to_current_path(&vec!["client", "src", "test", "vert.glsl"])).expect(""),
                 }),
-                fragment: device.create_shader_mod(interface::ShaderModDescriptor {
-                    stype: interface::ShaderType::Fragment,
+                fragment: device.create_shader_mod(api::ShaderModDescriptor {
+                    stype: api::ShaderType::Fragment,
                     source: fs::read_to_string(&relative_to_current_path(&vec!["client", "src", "test", "frag.glsl"])).expect(""),
                 }),
             };
 
-            let mut pipeline_desc = interface::PipelineDescriptor::new(
-                interface::Primitive::Triangles,
+            let mut pipeline_desc = api::PipelineDescriptor::new(
+                api::Primitive::Triangles,
                 shader_set,
                 &pipeline_layout,
             );
 
-            pipeline_desc.push_vb(interface::VertexBufferDescriptor {
+            pipeline_desc.push_vb(api::VertexBufferDescriptor {
                 binding: 0,
                 stride: size_of::<Vertex>(),
             });
 
-            pipeline_desc.push_vb(interface::VertexBufferDescriptor {
+            pipeline_desc.push_vb(api::VertexBufferDescriptor {
                 binding: 1,
                 stride: size_of::<[[f32; 4]; 4]>(),
             });
 
-            pipeline_desc.push_attr(interface::AttributeDescriptor {
+            pipeline_desc.push_attr(api::AttributeDescriptor {
                 binding: 0,
                 location: 0,
-                data: interface::VertexData {
+                data: api::VertexData {
                     offset: 0,
-                    data_type: interface::DataType::Vec3f32,
+                    data_type: api::DataType::Vec3f32,
                 },
             });
 
-            pipeline_desc.push_attr(interface::AttributeDescriptor {
+            pipeline_desc.push_attr(api::AttributeDescriptor {
                 binding: 0,
                 location: 1,
-                data: interface::VertexData {
+                data: api::VertexData {
                     offset: size_of::<[f32; 3]>(),
-                    data_type: interface::DataType::Vec2f32,
+                    data_type: api::DataType::Vec2f32,
                 },
             });
 
-            pipeline_desc.push_attr(interface::AttributeDescriptor {
+            pipeline_desc.push_attr(api::AttributeDescriptor {
                 binding: 0,
                 location: 2,
-                data: interface::VertexData {
+                data: api::VertexData {
                     offset: size_of::<[f32; 3]>() + size_of::<[f32; 2]>(),
-                    data_type: interface::DataType::Vec3f32,
+                    data_type: api::DataType::Vec3f32,
                 },
             });
 
-            pipeline_desc.push_attr(interface::AttributeDescriptor {
+            pipeline_desc.push_attr(api::AttributeDescriptor {
                 binding: 1,
                 location: 3,
-                data: interface::VertexData {
+                data: api::VertexData {
                     offset: 0,
-                    data_type: interface::DataType::Mat4f32,
+                    data_type: api::DataType::Mat4f32,
                 },
             });
 
@@ -192,10 +194,10 @@ impl Renderer {
 
         let desc_set = device.allocate_descriptor_set(&desc_set_layout);
 
-        device.write_descriptor_set(interface::DescriptorSetWrite {
+        device.write_descriptor_set(api::DescriptorSetWrite {
             set: &desc_set,
             binding: 0,
-            descriptor: interface::Descriptor::Buffer(&uniform),
+            descriptor: api::Descriptor::Buffer(&uniform),
         });
 
 

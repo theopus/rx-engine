@@ -1,4 +1,4 @@
-pub extern crate backend_interface as interface;
+pub extern crate backend_api as api;
 pub extern crate backend_opengl as backend;
 pub extern crate imgui;
 ///maths

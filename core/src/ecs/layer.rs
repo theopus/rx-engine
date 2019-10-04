@@ -10,7 +10,7 @@ use crate::backend::{PlatformManager, RendererDevice};
 use crate::ecs::{ActiveCamera, DeltaTime, InputEventsRead, InputEventsWrite, PlatformEvents};
 use crate::ecs::components::{Camera, Position, Render, Rotation, Transformation, Velocity};
 use crate::ecs::system::{CameraSystem, MoveSystem, TransformationSystem};
-use crate::interface::Event;
+use crate::api::Event;
 use crate::render::DrawIndexed;
 use crate::render::Renderer;
 use crate::run::{EngineContext, FrameContext, Layer, LayerBuilder};

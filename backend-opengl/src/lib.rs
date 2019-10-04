@@ -1,7 +1,7 @@
-extern crate backend_interface as interface;
+extern crate backend_api as api;
 extern crate itertools;
 
-pub use api::{
+pub use crate::core::{
     OpenGLRendererApi as RendererApi,
     OpenGLRendererDevice as RendererDevice,
 };
@@ -23,7 +23,7 @@ pub use platform_glfw::{
 
 mod image;
 mod buffer_v2;
-mod api;
+mod core;
 mod platform_glfw;
 mod shader_mod;
 mod memory;
@@ -36,9 +36,9 @@ mod swapchain;
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Backend {}
 
-impl backend_interface::Backend for Backend {
-    type RendererApi = api::OpenGLRendererApi;
-    type RendererDevice = api::OpenGLRendererDevice;
+impl backend_api::Backend for Backend {
+    type RendererApi = core::OpenGLRendererApi;
+    type RendererDevice = core::OpenGLRendererDevice;
     type PlatformManager = platform_glfw::GlfwPlatformManager;
     type ImGuiRenderer = platform_glfw::GlfwImGuiRenderer;
     type Memory = memory::OpenGlMemory;

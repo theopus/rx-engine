@@ -10,7 +10,7 @@ pub struct OpenGlBuffer {
 }
 
 impl OpenGlBuffer {
-    pub fn new(gl: &gl::Gl, desc: interface::BufferDescriptor) -> OpenGlBuffer {
+    pub fn new(gl: &gl::Gl, desc: api::BufferDescriptor) -> OpenGlBuffer {
         unsafe {
             let id = Self::generate(gl);
             let buffer = OpenGlBuffer { id, target: to_gl_buffer_type(&desc.usage), usage: gl::STATIC_DRAW, size: desc.size };
@@ -34,7 +34,7 @@ impl OpenGlBuffer {
         gl.BufferData(buffer.target, buffer.size as isize, std::ptr::null(), buffer.usage);
     }
 
-    pub fn mapper(gl: Rc<gl::Gl>, buffer: &OpenGlBuffer) -> *mut u8 {
+    pub fn mapper(gl: &gl::Gl, buffer: &OpenGlBuffer) -> *mut u8 {
         unsafe { buffer.bind(&gl) };
         unsafe { gl.MapBuffer(buffer.target, gl::READ_WRITE) as *mut u8 }
     }
@@ -44,10 +44,10 @@ impl OpenGlBuffer {
     }
 }
 
-pub(crate) fn to_gl_buffer_type(u: &interface::Usage) -> u32 {
+pub(crate) fn to_gl_buffer_type(u: &api::Usage) -> u32 {
     match u {
-        interface::Usage::Vertex => gl::ARRAY_BUFFER,
-        interface::Usage::Index => gl::ELEMENT_ARRAY_BUFFER,
-        interface::Usage::Uniform => gl::UNIFORM_BUFFER
+        api::Usage::Vertex => gl::ARRAY_BUFFER,
+        api::Usage::Index => gl::ELEMENT_ARRAY_BUFFER,
+        api::Usage::Uniform => gl::UNIFORM_BUFFER
     }
 }

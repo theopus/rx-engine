@@ -10,14 +10,14 @@ use glfw::Context;
 use glfw::Key;
 use glfw::SwapInterval;
 
-use backend_interface::Backend as InterfaceBackend;
-use backend_interface::Event;
-use backend_interface::ImGuiRenderer;
-use backend_interface::PlatformManager;
-use backend_interface::WindowConfig;
+use backend_api::Backend as apiBackend;
+use backend_api::Event;
+use backend_api::ImGuiRenderer;
+use backend_api::PlatformManager;
+use backend_api::WindowConfig;
 
-use crate::api::OpenGLRendererApi;
-use crate::api::OpenGLRendererDevice;
+use crate::core::OpenGLRendererApi;
+use crate::core::OpenGLRendererDevice;
 use crate::Backend;
 use crate::imgui_glfw as imgui_glfw_rs;
 use crate::imgui_glfw_render as imgui_opengl_renderer;
@@ -32,7 +32,7 @@ pub struct GlfwPlatformManager {
 }
 
 impl PlatformManager<Backend> for GlfwPlatformManager {
-    fn new(config: WindowConfig) -> <Backend as InterfaceBackend>::PlatformManager {
+    fn new(config: WindowConfig) -> <Backend as apiBackend>::PlatformManager {
         let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
         //excplicit 3.3 (needed for macOS)
@@ -78,7 +78,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
     }
 
     fn create_renderer(&mut self)
-                       -> (<Backend as InterfaceBackend>::RendererApi, <Backend as InterfaceBackend>::RendererDevice) {
+                       -> (<Backend as apiBackend>::RendererApi, <Backend as apiBackend>::RendererDevice) {
         let gl = gl::Gl::load_with(|s| {
             self.window.borrow_mut().get_proc_address(s) as *const std::os::raw::c_void
         });
@@ -107,9 +107,9 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
                 glfw::WindowEvent::FramebufferSize(w, h) => Event::Resize(w, h),
                 glfw::WindowEvent::Key(key, code, action, modfifer) => {
                     match action {
-                        glfw::Action::Release => Event::Key(code as u32, interface::Action::Release),
-                        glfw::Action::Press => Event::Key(code as u32, interface::Action::Press),
-                        glfw::Action::Repeat => Event::Key(code as u32, interface::Action::Repeat),
+                        glfw::Action::Release => Event::Key(code as u32, api::Action::Release),
+                        glfw::Action::Press => Event::Key(code as u32, api::Action::Press),
+                        glfw::Action::Repeat => Event::Key(code as u32, api::Action::Repeat),
                     }
                 }
                 _ => {
@@ -139,7 +139,7 @@ impl PlatformManager<Backend> for GlfwPlatformManager {
         self.glfw.borrow().get_time()
     }
 
-    fn create_surface(&self) -> <Backend as interface::Backend>::Surface {
+    fn create_surface(&self) -> <Backend as api::Backend>::Surface {
         let fun: Box<Fn() -> Box<FnMut()>> =  {
             let window = self.window.clone();
             Box::new(move || {

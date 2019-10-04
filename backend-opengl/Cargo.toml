@@ -14,8 +14,8 @@ glfw_backend = []
 itertools = "0.8.0"
 imgui = {version = "0.1.0", package= "imgui"}
 #
-[dependencies.backend-interface]
-path="../backend-interface"
+[dependencies.backend-api]
+path="../backend-api"
 [dependencies.gl]
 path = "../gl"
 

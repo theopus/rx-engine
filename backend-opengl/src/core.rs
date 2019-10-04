@@ -2,8 +2,8 @@ use core::borrow::Borrow;
 use std::{fs, path::Path, rc::Rc, sync::mpsc::Receiver};
 use std::os::raw::c_void;
 
-use backend_interface::{
-    Backend as InterfaceBackend,
+use backend_api::{
+    Backend as apiBackend,
     RendererApi,
     RendererDevice,
 };
@@ -22,66 +22,70 @@ impl OpenGLRendererDevice {
 }
 
 impl RendererDevice<Backend> for OpenGLRendererDevice {
-    fn create_buffer(&self, desc: interface::BufferDescriptor) -> <Backend as interface::Backend>::Buffer {
+    fn allocate_memory(&self, size: u64) -> <Backend as api::Backend>::Memory {
+        unimplemented!()
+    }
+
+    fn create_buffer(&self, desc: api::BufferDescriptor) -> <Backend as api::Backend>::Buffer {
         crate::buffer_v2::OpenGlBuffer::new(&self.gl_api, desc)
     }
 
-    fn map_buffer(&self, buffer: &<Backend as interface::Backend>::Buffer) -> *mut u8 {
-        crate::buffer_v2::OpenGlBuffer::mapper(self.gl_api.clone(), buffer)
+    fn map_buffer(&self, buffer: &<Backend as api::Backend>::Buffer) -> *mut u8 {
+        crate::buffer_v2::OpenGlBuffer::mapper(&self.gl_api.clone(), buffer)
     }
 
-    fn unmap_buffer(&self, buffer: &<Backend as interface::Backend>::Buffer) {
+    fn unmap_buffer(&self, buffer: &<Backend as api::Backend>::Buffer) {
         crate::buffer_v2::OpenGlBuffer::unmap(self.gl_api.clone(), buffer)
     }
 
-    fn create_pipeline(&self, desc: interface::PipelineDescriptor<Backend>) -> <Backend as interface::Backend>::Pipeline {
+    fn create_pipeline(&self, desc: api::PipelineDescriptor<Backend>) -> <Backend as api::Backend>::Pipeline {
         unsafe {
             crate::pipeline::OpenGlPipeline::new(&self.gl_api, desc)
                 .expect("err")
         }
     }
 
-    fn create_cmd_buffer(&self) -> <Backend as interface::Backend>::CommandBuffer {
+    fn create_cmd_buffer(&self) -> <Backend as api::Backend>::CommandBuffer {
         crate::pipeline::OpenGlCommandBuffer::new()
     }
 
-    fn allocate_descriptor_set(&self, desc: &<Backend as interface::Backend>::DescriptorSetLayout) -> <Backend as interface::Backend>::DescriptorSet {
+    fn allocate_descriptor_set(&self, desc: &<Backend as api::Backend>::DescriptorSetLayout) -> <Backend as api::Backend>::DescriptorSet {
         crate::pipeline::OpenGlDescriptorSet {}
     }
 
-    fn execute(&self, mut cmd: <Backend as interface::Backend>::CommandBuffer) {
+    fn execute(&self, mut cmd: <Backend as api::Backend>::CommandBuffer) {
         unsafe { cmd.execute(&self.gl_api); };
     }
 
-    fn create_shader_mod(&self, desc: interface::ShaderModDescriptor) -> <Backend as interface::Backend>::ShaderMod {
+    fn create_shader_mod(&self, desc: api::ShaderModDescriptor) -> <Backend as api::Backend>::ShaderMod {
         crate::shader_mod::OpenGlShaderMod::new(&self.gl_api, desc)
             .expect("err")
     }
 
-    fn create_descriptor_set_layout(&self, bindings: &[interface::DescriptorSetLayoutBinding]) -> <Backend as interface::Backend>::DescriptorSetLayout {
+    fn create_descriptor_set_layout(&self, bindings: &[api::DescriptorSetLayoutBinding]) -> <Backend as api::Backend>::DescriptorSetLayout {
         crate::pipeline::OpenGlDescriptorSetLayout::new(bindings)
     }
 
-    fn create_pipeline_layout<I>(&self, desc_layout: &<Backend as interface::Backend>::DescriptorSetLayout, hints: I) -> <Backend as interface::Backend>::PipelineLayout
+    fn create_pipeline_layout<I>(&self, desc_layout: &<Backend as api::Backend>::DescriptorSetLayout, hints: I) -> <Backend as api::Backend>::PipelineLayout
         where
-            I: IntoIterator<Item=interface::PipelineLayoutHint>, {
+            I: IntoIterator<Item=api::PipelineLayoutHint>, {
         crate::pipeline::OpenGlPipelineLayout::new(desc_layout, hints)
     }
 
-    fn write_descriptor_set(&self, desc_set_write: interface::DescriptorSetWrite<Backend>) {
+    fn write_descriptor_set(&self, desc_set_write: api::DescriptorSetWrite<Backend>) {
         match &desc_set_write.descriptor {
-            interface::Descriptor::Buffer(buffer) => {
+            api::Descriptor::Buffer(buffer) => {
                 unsafe { self.gl_api.BindBufferBase(buffer.target, desc_set_write.binding, buffer.id); };
             }
         };
     }
 
-    fn create_swapchain(&self, surface: &<Backend as interface::Backend>::Surface)
-                        -> (<Backend as interface::Backend>::Swapchain, Vec<<Backend as interface::Backend>::Image>) {
+    fn create_swapchain(&self, surface: &<Backend as api::Backend>::Surface)
+                        -> (<Backend as api::Backend>::Swapchain, Vec<<Backend as api::Backend>::Image>) {
         (crate::swapchain::OpenGlSwapchain::new(surface), Vec::new())
     }
 
-    fn create_image(kind: interface::image::Kind) -> <Backend as interface::Backend>::Image {
+    fn create_image(kind: api::image::Kind) -> <Backend as api::Backend>::Image {
         unimplemented!()
     }
 }
@@ -107,7 +111,7 @@ impl RendererApi<Backend> for OpenGLRendererApi {
     }
 
 
-//    fn draw_indexed(&self, vertex_array: &<Backend as InterfaceBackend>::VertexArray) {
+//    fn draw_indexed(&self, vertex_array: &<Backend as apiBackend>::VertexArray) {
 //        vertex_array.bind();
 //        unsafe {
 //            self.gl_api.DrawElements(gl::TRIANGLES,

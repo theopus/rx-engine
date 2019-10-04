@@ -19,7 +19,7 @@ impl OpenGlSwapchain {
     }
 }
 
-impl interface::Swapchain<Backend> for OpenGlSwapchain {
+impl api::Swapchain<Backend> for OpenGlSwapchain {
     fn present(&mut self, frame_index: u32) {
         (self.swap_buffers)()
     }

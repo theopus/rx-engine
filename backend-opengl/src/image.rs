@@ -1,5 +1,5 @@
 use gl::Gl;
-use interface::image;
+use api::image;
 use std::os::raw::c_void;
 
 pub struct OpenGlImage {

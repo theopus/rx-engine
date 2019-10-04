@@ -12,10 +12,10 @@ pub struct OpenGlShaderMod {
 }
 
 impl OpenGlShaderMod {
-    pub fn new(gl: &Gl, desc: interface::ShaderModDescriptor) -> Result<Self, String> {
+    pub fn new(gl: &Gl, desc: api::ShaderModDescriptor) -> Result<Self, String> {
         let kind = match desc.stype {
-            interface::ShaderType::Vertex => gl::VERTEX_SHADER,
-            interface::ShaderType::Fragment => gl::FRAGMENT_SHADER,
+            api::ShaderType::Vertex => gl::VERTEX_SHADER,
+            api::ShaderType::Fragment => gl::FRAGMENT_SHADER,
         };
         let id = shader_from_src(gl, &desc.source, kind)?;
 

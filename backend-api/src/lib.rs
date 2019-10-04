@@ -203,6 +203,7 @@ pub trait PlatformManager<B: Backend> {
 }
 
 pub trait RendererDevice<B: Backend> {
+    fn allocate_memory(&self, size: u64) -> B::Memory;
     fn create_buffer(&self, desc: BufferDescriptor) -> B::Buffer;
     fn map_buffer(&self, buffer: &B::Buffer) -> *mut u8;
     fn unmap_buffer(&self, buffer: &B::Buffer);

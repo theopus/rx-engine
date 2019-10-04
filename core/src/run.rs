@@ -1,4 +1,4 @@
-use interface::{Event, ImGuiRenderer, PlatformManager, RendererApi, RendererDevice, WindowConfig, Swapchain};
+use api::{Event, ImGuiRenderer, PlatformManager, RendererApi, RendererDevice, WindowConfig, Swapchain};
 
 use crate::ecs::layer::EcsLayerBuilder;
 use crate::render::{Frame, Renderer};

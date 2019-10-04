@@ -5,7 +5,7 @@ use crate::{
     },
 };
 use crate::imgui;
-use crate::interface::Event;
+use crate::api::Event;
 use crate::run::{EngineContext, FrameContext};
 
 struct InfoLayer {

@@ -8,10 +8,10 @@ use std::os::raw::c_char;
 use itertools::Itertools;
 
 use gl::Gl;
-use interface::AttributeDescriptor;
-use interface::PipelineDescriptor;
-use interface::Primitive;
-use interface::VertexBufferDescriptor;
+use api::AttributeDescriptor;
+use api::PipelineDescriptor;
+use api::Primitive;
+use api::VertexBufferDescriptor;
 
 use crate::Backend;
 use crate::buffer_v2::OpenGlBuffer;
@@ -106,13 +106,13 @@ impl OpenGlPipeline {
             buffer.bind(gl);
             for attr in attrs {
                 match attr.data.data_type {
-                    interface::DataType::Vec3f32 => {
+                    api::DataType::Vec3f32 => {
                         OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset, attr.location);
                     }
-                    interface::DataType::Vec2f32 => {
+                    api::DataType::Vec2f32 => {
                         OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset, attr.location);
                     }
-                    interface::DataType::Mat4f32 => {
+                    api::DataType::Mat4f32 => {
                         OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset + size_of::<[f32; 4]>() * 0, attr.location + 0);
                         OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset + size_of::<[f32; 4]>() * 1, attr.location + 1);
                         OpenGlPipeline::vertex_pointer(gl, buff, attr, attr.data.offset + size_of::<[f32; 4]>() * 2, attr.location + 2);
@@ -140,14 +140,14 @@ impl OpenGlPipeline {
     ) {
         gl.VertexAttribPointer(location.into(),
                                match attr.data.data_type {
-                                   interface::DataType::Vec3f32 => 3,
-                                   interface::DataType::Vec2f32 => 2,
-                                   interface::DataType::Mat4f32 => 4,
+                                   api::DataType::Vec3f32 => 3,
+                                   api::DataType::Vec2f32 => 2,
+                                   api::DataType::Mat4f32 => 4,
                                },
                                match attr.data.data_type {
-                                   interface::DataType::Vec3f32 => gl::FLOAT,
-                                   interface::DataType::Vec2f32 => gl::FLOAT,
-                                   interface::DataType::Mat4f32 => gl::FLOAT,
+                                   api::DataType::Vec3f32 => gl::FLOAT,
+                                   api::DataType::Vec2f32 => gl::FLOAT,
+                                   api::DataType::Mat4f32 => gl::FLOAT,
                                },
                                gl::FALSE,
                                buff.stride as i32,
@@ -161,7 +161,7 @@ unsafe fn ubo_bindings(gl: &Gl, program: ProgramId, pipeline_layout: &OpenGlPipe
     for (binding, (desc, hint)) in &pipeline_layout.layout {
         let index = if hint.is_some() {
             match hint.as_ref().unwrap().hint {
-                interface::LayoutHint::Name(string) => {
+                api::LayoutHint::Name(string) => {
                     let string = string.to_owned() + "\0";
                     gl.GetUniformBlockIndex(program, string.as_str().as_ptr() as *const c_char)
                 }
@@ -226,9 +226,9 @@ unsafe fn validate_attrs(gl: &Gl, id: ProgramId, desc: &PipelineDescriptor<Backe
         let gl_attr = get_attr(attr, &gl_attrs)?;
         assert_eq!(gl_attr.0, attr.location as i32);
         assert_eq!(gl_attr.1, match attr.data.data_type {
-            interface::DataType::Vec3f32 => gl::FLOAT_VEC3,
-            interface::DataType::Vec2f32 => gl::FLOAT_VEC2,
-            interface::DataType::Mat4f32 => gl::FLOAT_MAT4,
+            api::DataType::Vec3f32 => gl::FLOAT_VEC3,
+            api::DataType::Vec2f32 => gl::FLOAT_VEC2,
+            api::DataType::Mat4f32 => gl::FLOAT_MAT4,
         });
         assert_eq!(gl_attr.2, 1);
     }
@@ -280,11 +280,11 @@ unsafe fn gen_vao(gl: &Gl) -> VaoId {
 
 #[derive(Debug)]
 pub struct OpenGlDescriptorSetLayout {
-    layout: HashMap<u32, interface::DescriptorSetLayoutBinding>
+    layout: HashMap<u32, api::DescriptorSetLayoutBinding>
 }
 
 impl OpenGlDescriptorSetLayout {
-    pub fn new(bindings: &[interface::DescriptorSetLayoutBinding]) -> Self {
+    pub fn new(bindings: &[api::DescriptorSetLayoutBinding]) -> Self {
         let mut map = HashMap::with_capacity(bindings.len());
         for b in bindings {
             map.insert(b.binding, (b).clone());
@@ -295,14 +295,14 @@ impl OpenGlDescriptorSetLayout {
 
 #[derive(Debug)]
 pub struct OpenGlPipelineLayout {
-    layout: HashMap<u32, (interface::DescriptorSetLayoutBinding, Option<interface::PipelineLayoutHint>)>
+    layout: HashMap<u32, (api::DescriptorSetLayoutBinding, Option<api::PipelineLayoutHint>)>
 }
 
 impl OpenGlPipelineLayout {
-    pub fn new<I>(desc_layout: &<Backend as interface::Backend>::DescriptorSetLayout, hints: I) -> Self
+    pub fn new<I>(desc_layout: &<Backend as api::Backend>::DescriptorSetLayout, hints: I) -> Self
         where
-            I: IntoIterator<Item=interface::PipelineLayoutHint>, {
-        let mut map: HashMap<u32, (interface::DescriptorSetLayoutBinding, Option<interface::PipelineLayoutHint>)>
+            I: IntoIterator<Item=api::PipelineLayoutHint>, {
+        let mut map: HashMap<u32, (api::DescriptorSetLayoutBinding, Option<api::PipelineLayoutHint>)>
             = HashMap::with_capacity(desc_layout.layout.len());
         for e in &desc_layout.layout {
             map.insert(e.0.clone(), (e.1.clone(), None));
@@ -391,20 +391,20 @@ impl OpenGlCommandBuffer {
     }
 }
 
-impl interface::CommandBuffer<Backend> for OpenGlCommandBuffer {
-    fn prepare_pipeline(&mut self, pipeline: &<Backend as interface::Backend>::Pipeline) {
+impl api::CommandBuffer<Backend> for OpenGlCommandBuffer {
+    fn prepare_pipeline(&mut self, pipeline: &<Backend as api::Backend>::Pipeline) {
         self.cmds.push(PreparePipeline(pipeline.clone()));
     }
 
-    fn bind_vertex_buffer(&mut self, binding: u32, buffer: &<Backend as interface::Backend>::Buffer) {
+    fn bind_vertex_buffer(&mut self, binding: u32, buffer: &<Backend as api::Backend>::Buffer) {
         self.cmds.push(BindVertexBuffer(binding, buffer.clone()))
     }
 
-    fn bind_index_buffer(&mut self, buffer: &<Backend as interface::Backend>::Buffer) {
+    fn bind_index_buffer(&mut self, buffer: &<Backend as api::Backend>::Buffer) {
         self.cmds.push(BindIndexBuffer(buffer.clone()))
     }
 
-    fn buffer_data(&mut self, buffer: &<Backend as interface::Backend>::Buffer, data: &[u8]) {
+    fn buffer_data(&mut self, buffer: &<Backend as api::Backend>::Buffer, data: &[u8]) {
         unimplemented!()
     }
 
@@ -416,7 +416,7 @@ impl interface::CommandBuffer<Backend> for OpenGlCommandBuffer {
         }
     }
 
-    fn bind_descriptor_set(&mut self, pipeline_layout: &<Backend as interface::Backend>::PipelineLayout, desc_set: &<Backend as interface::Backend>::DescriptorSet) {
+    fn bind_descriptor_set(&mut self, pipeline_layout: &<Backend as api::Backend>::PipelineLayout, desc_set: &<Backend as api::Backend>::DescriptorSet) {
         let bindings: Vec<u32> = (&pipeline_layout.layout)
             .into_iter()
             .map(|(binding, _)| *binding)
