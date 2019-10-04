@@ -20,6 +20,9 @@ pub use platform_glfw::{
     GlfwImGuiRenderer as ImGuiRenderer,
     GlfwPlatformManager as PlatformManager,
 };
+pub use crate::memory::{
+    OpenGlMemory as Memory
+};
 
 mod image;
 mod buffer_v2;

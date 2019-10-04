@@ -1,6 +1,5 @@
 use std::rc::Rc;
 
-
 #[derive(Debug, Clone)]
 pub struct OpenGlBuffer {
     pub(crate)id: u32,
@@ -36,11 +35,22 @@ impl OpenGlBuffer {
 
     pub fn mapper(gl: &gl::Gl, buffer: &OpenGlBuffer) -> *mut u8 {
         unsafe { buffer.bind(&gl) };
-        unsafe { gl.MapBuffer(buffer.target, gl::READ_WRITE) as *mut u8 }
+        unsafe {
+            gl.MapBufferRange(buffer.target, 0, buffer.size as isize,
+                              gl::MAP_WRITE_BIT
+                                  | gl::MAP_READ_BIT
+                                  | gl::MAP_FLUSH_EXPLICIT_BIT) as *mut u8
+        }
     }
 
-    pub fn unmap(gl: Rc<gl::Gl>, buffer: &OpenGlBuffer) {
+    pub fn unmap(gl: &gl::Gl, buffer: &OpenGlBuffer) {
+        unsafe { buffer.bind(&gl) };
         unsafe { gl.UnmapBuffer(buffer.target); };
+    }
+
+    pub fn flush(gl: &gl::Gl, buffer: &OpenGlBuffer) {
+        unsafe { buffer.bind(&gl) };
+        unsafe { gl.FlushMappedBufferRange(buffer.target, 0, buffer.size as isize); };
     }
 }
 

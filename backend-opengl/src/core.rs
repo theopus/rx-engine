@@ -22,21 +22,31 @@ impl OpenGLRendererDevice {
 }
 
 impl RendererDevice<Backend> for OpenGLRendererDevice {
-    fn allocate_memory(&self, size: u64) -> <Backend as api::Backend>::Memory {
-        unimplemented!()
+    fn allocate_memory(&self, size: u32) -> <Backend as api::Backend>::Memory {
+        crate::memory::OpenGlMemory::allocate(size)
+    }
+
+    fn map_memory(&self, memory: &<Backend as api::Backend>::Memory) -> *mut u8 {
+        memory.map_memory(&self.gl_api)
+    }
+
+    fn flush_memory(&self, memory: &<Backend as api::Backend>::Memory) {
+        memory.flush_memory(&self.gl_api)
+    }
+
+    fn unmap_memory(&self, memory: &<Backend as api::Backend>::Memory) {
+        memory.unmap_memory(&self.gl_api)
+    }
+
+    fn bind_buffer_memory(&self,
+                          memory: &mut <Backend as api::Backend>::Memory,
+                          buffer: &<Backend as api::Backend>::Buffer) {
+        memory.bind_buffer(buffer)
     }
 
     fn create_buffer(&self, desc: api::BufferDescriptor) -> <Backend as api::Backend>::Buffer {
         crate::buffer_v2::OpenGlBuffer::new(&self.gl_api, desc)
-    }
-
-    fn map_buffer(&self, buffer: &<Backend as api::Backend>::Buffer) -> *mut u8 {
-        crate::buffer_v2::OpenGlBuffer::mapper(&self.gl_api.clone(), buffer)
-    }
-
-    fn unmap_buffer(&self, buffer: &<Backend as api::Backend>::Buffer) {
-        crate::buffer_v2::OpenGlBuffer::unmap(self.gl_api.clone(), buffer)
-    }
+    }e
 
     fn create_pipeline(&self, desc: api::PipelineDescriptor<Backend>) -> <Backend as api::Backend>::Pipeline {
         unsafe {

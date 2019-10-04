@@ -203,10 +203,14 @@ pub trait PlatformManager<B: Backend> {
 }
 
 pub trait RendererDevice<B: Backend> {
-    fn allocate_memory(&self, size: u64) -> B::Memory;
+    //mem
+    fn allocate_memory(&self, size: u32) -> B::Memory;
+    fn map_memory(&self, memory: &B::Memory) -> *mut u8;
+    fn flush_memory(&self, memory: &B::Memory);
+    fn unmap_memory(&self, memory: &B::Memory);
+    fn bind_buffer_memory(&self, memory: &mut B::Memory, buffer: &B::Buffer);
+    //buffer
     fn create_buffer(&self, desc: BufferDescriptor) -> B::Buffer;
-    fn map_buffer(&self, buffer: &B::Buffer) -> *mut u8;
-    fn unmap_buffer(&self, buffer: &B::Buffer);
     fn create_pipeline(&self, desc: PipelineDescriptor<B>) -> B::Pipeline;
     //make pooled
     fn create_cmd_buffer(&self) -> B::CommandBuffer;

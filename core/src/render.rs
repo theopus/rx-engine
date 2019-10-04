@@ -32,6 +32,11 @@ pub struct Renderer {
     receiver: Receiver<DrawIndexed>,
 
     last_frame: Frame,
+
+    mesh_mem: backend::Memory,
+    indexes_mem: backend::Memory,
+    uniform_mem: backend::Memory,
+    instanced_mem: backend::Memory
 }
 
 impl Renderer {
@@ -41,7 +46,10 @@ impl Renderer {
         let result = loader.load_obj(path_buf);
 
 
-//        device.allocate_memory(1024);
+        let mut mesh_mem = device.allocate_memory(1024);
+        let mut indexes_mem = device.allocate_memory(1024);
+        let mut uniform_mem = device.allocate_memory(1024);
+        let mut instanced_mem = device.allocate_memory(16 * 4 * 30000);
 
         let static_mesh_buffer = device.create_buffer(api::BufferDescriptor {
             size: 1024,
@@ -95,13 +103,19 @@ impl Renderer {
         let vertexes = Vertex::from_pos_norm(&result.positions, &result.normals);
         println!("{:?}", &vertexes);
 
-        let b_ptr = device.map_buffer(&static_mesh_buffer);
-        unsafe { std::ptr::copy(vertexes.as_ptr() as *mut u8, b_ptr, vertexes.len() * std::mem::size_of::<Vertex>()) }
-        device.unmap_buffer(&static_mesh_buffer);
+        device.bind_buffer_memory(&mut mesh_mem, &static_mesh_buffer);
+        device.bind_buffer_memory(&mut indexes_mem, &static_mesh_index_buffer);
+        device.bind_buffer_memory(&mut uniform_mem, &uniform);
+        device.bind_buffer_memory(&mut instanced_mem, &instanced);
 
-        let i_ptr = device.map_buffer(&static_mesh_index_buffer);
+        let b_ptr = device.map_memory(&mesh_mem);
+        unsafe { std::ptr::copy(vertexes.as_ptr() as *mut u8, b_ptr, vertexes.len() * std::mem::size_of::<Vertex>()) }
+        let i_ptr = device.map_memory(&indexes_mem);
         unsafe { std::ptr::copy(result.indices.as_ptr() as *mut u8, i_ptr, result.indices.len() * size_of::<u32>()) }
-        device.unmap_buffer(&static_mesh_index_buffer);
+
+
+        device.unmap_memory(&mesh_mem);
+        device.unmap_memory(&indexes_mem);
 
 
         let desc_set_layout = device.create_descriptor_set_layout(
@@ -218,7 +232,12 @@ impl Renderer {
                 view: glm::identity(),
                 projection: glm::identity(),
             },
+            mesh_mem,
+            indexes_mem,
+            uniform_mem,
             instanced,
+
+            instanced_mem
         }
     }
 }
@@ -250,7 +269,7 @@ impl Renderer {
 
     pub fn process(&self, device: &backend::RendererDevice, frame: &mut Frame) {
         let mut cmd_buffer = device.create_cmd_buffer();
-        let u_ptr = device.map_buffer(&self.uniform);
+        let u_ptr = device.map_memory(&self.uniform_mem);
 
         cmd_buffer.clear_screen((0.5, 0.5, 0.5, 1.));
         cmd_buffer.prepare_pipeline(&self.pipeline);
@@ -266,7 +285,7 @@ impl Renderer {
         }
 
         let vp = frame.projection * frame.view;
-        let mapped = device.map_buffer(&self.instanced);
+        let mapped = device.map_memory(&self.instanced_mem);
 
         let mut n = 0;
         for (i, cmd) in self.receiver.try_iter().enumerate() {
@@ -292,8 +311,8 @@ impl Renderer {
 
         cmd_buffer.draw_indexed(self.index_count as u32, 0, (n + 1) as u32);
 
-        device.unmap_buffer(&self.uniform);
-        device.unmap_buffer(&self.instanced);
+        device.unmap_memory(&self.instanced_mem);
+        device.unmap_memory(&self.uniform_mem);
         device.execute(cmd_buffer)
     }
 
