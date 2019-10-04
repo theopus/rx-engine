@@ -1,8 +1,5 @@
 use crate::Backend;
 
-#[derive(Debug)]
-pub struct OpenGlFramebuffer {}
-
 pub struct OpenGlSurface {
     pub(crate) swap_buffers_fn: Box<Fn() -> Box<FnMut()>>,
 }

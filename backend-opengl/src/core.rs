@@ -46,7 +46,7 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
 
     fn create_buffer(&self, desc: api::BufferDescriptor) -> <Backend as api::Backend>::Buffer {
         crate::buffer_v2::OpenGlBuffer::new(&self.gl_api, desc)
-    }e
+    }
 
     fn create_pipeline(&self, desc: api::PipelineDescriptor<Backend>) -> <Backend as api::Backend>::Pipeline {
         unsafe {

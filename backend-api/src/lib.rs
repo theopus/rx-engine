@@ -32,6 +32,7 @@ pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send
     type Surface;
     type Swapchain: Swapchain<Self>;
     type Framebuffer: Send + Sync + Debug;
+    type Sampler: Send + Sync + Debug;
 }
 
 pub struct WindowConfig {
@@ -249,6 +250,7 @@ pub mod image {
     pub type Size = u32;
     pub type Level = u16;
 
+    #[derive(Debug)]
     pub enum Kind {
         D1(Size, Level),
         D2(Size, Size, Level),

@@ -51,6 +51,7 @@ impl Renderer {
         let mut uniform_mem = device.allocate_memory(1024);
         let mut instanced_mem = device.allocate_memory(16 * 4 * 30000);
 
+
         let static_mesh_buffer = device.create_buffer(api::BufferDescriptor {
             size: 1024,
             usage: api::Usage::Vertex,
@@ -67,6 +68,12 @@ impl Renderer {
             size: 16 * 4 * 30000,
             usage: api::Usage::Vertex,
         });
+
+
+        device.bind_buffer_memory(&mut mesh_mem, &static_mesh_buffer);
+        device.bind_buffer_memory(&mut indexes_mem, &static_mesh_index_buffer);
+        device.bind_buffer_memory(&mut uniform_mem, &uniform);
+        device.bind_buffer_memory(&mut instanced_mem, &instanced);
 
         #[derive(Debug)]
         struct Vertex {
@@ -103,10 +110,6 @@ impl Renderer {
         let vertexes = Vertex::from_pos_norm(&result.positions, &result.normals);
         println!("{:?}", &vertexes);
 
-        device.bind_buffer_memory(&mut mesh_mem, &static_mesh_buffer);
-        device.bind_buffer_memory(&mut indexes_mem, &static_mesh_index_buffer);
-        device.bind_buffer_memory(&mut uniform_mem, &uniform);
-        device.bind_buffer_memory(&mut instanced_mem, &instanced);
 
         let b_ptr = device.map_memory(&mesh_mem);
         unsafe { std::ptr::copy(vertexes.as_ptr() as *mut u8, b_ptr, vertexes.len() * std::mem::size_of::<Vertex>()) }

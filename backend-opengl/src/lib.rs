@@ -30,6 +30,7 @@ mod core;
 mod platform_glfw;
 mod shader_mod;
 mod memory;
+mod framebuffer;
 
 mod imgui_glfw;
 mod imgui_glfw_render;
@@ -48,6 +49,7 @@ impl backend_api::Backend for Backend {
     type Buffer = buffer_v2::OpenGlBuffer;
     type Image = image::OpenGlImage;
     type ImageView = image::OpenGlImageView;
+    type Sampler = image::OpenGlSampler;
     type Pipeline = pipeline::OpenGlPipeline;
     type CommandBuffer = pipeline::OpenGlCommandBuffer;
     type ShaderMod = shader_mod::OpenGlShaderMod;
@@ -56,5 +58,5 @@ impl backend_api::Backend for Backend {
     type PipelineLayout = pipeline::OpenGlPipelineLayout;
     type Surface = swapchain::OpenGlSurface;
     type Swapchain = swapchain::OpenGlSwapchain;
-    type Framebuffer = swapchain::OpenGlFramebuffer;
+    type Framebuffer = framebuffer::OpenGlFramebuffer;
 }
