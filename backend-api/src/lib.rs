@@ -23,6 +23,7 @@ pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send
     type Image: Send + Sync;
     type ImageView: Send + Sync;
     type Pipeline: Send + Sync;
+    type RenderPass: Send + Sync;
     type CommandBuffer: CommandBuffer<Self> + Send + Sync;
     type ShaderMod: Send + Sync + Debug;
     type DescriptorSet: Send + Sync + Debug;
@@ -233,6 +234,13 @@ pub trait RendererDevice<B: Backend> {
 
     fn write_descriptor_set(&self, desc_set_write: DescriptorSetWrite<B>);
 
+    fn create_render_pass<A>(
+        &self,
+        attachments: A,
+    ) -> B::RenderPass
+        where
+            A: IntoIterator<Item=Attachment>;
+
     fn create_swapchain(
         &self,
         surface: &B::Surface,
@@ -242,8 +250,22 @@ pub trait RendererDevice<B: Backend> {
     );
 
     fn create_image(
-        kind: image::Kind
+        &self,
+        kind: image::Kind,
     ) -> B::Image;
+
+    fn create_image_view(
+        &self,
+        image: &B::Image,
+    ) -> B::ImageView;
+
+
+    fn bind_image_memory(
+        &self,
+        mem: &B::Memory,
+        img: &B::Image,
+        kind: image::Kind,
+    );
 }
 
 pub mod image {
@@ -262,6 +284,8 @@ pub mod image {
 pub trait Swapchain<B: Backend> {
     fn present(&mut self, frame_index: u32);
 }
+
+pub struct Attachment {}
 
 pub trait CommandBuffer<B: Backend> {
     fn prepare_pipeline(&mut self, pipeline: &B::Pipeline);

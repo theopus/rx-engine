@@ -51,6 +51,7 @@ impl backend_api::Backend for Backend {
     type ImageView = image::OpenGlImageView;
     type Sampler = image::OpenGlSampler;
     type Pipeline = pipeline::OpenGlPipeline;
+    type RenderPass = pipeline::OpenGlRenderPass;
     type CommandBuffer = pipeline::OpenGlCommandBuffer;
     type ShaderMod = shader_mod::OpenGlShaderMod;
     type DescriptorSet = pipeline::OpenGlDescriptorSet;

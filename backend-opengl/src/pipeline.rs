@@ -24,6 +24,11 @@ type ProgramId = gl::types::GLuint;
 type Binding = u32;
 type UboIndex = u32;
 
+#[derive(Debug, Clone)]
+pub struct OpenGlRenderPass {
+
+}
+
 
 #[derive(Debug, Clone)]
 pub struct OpenGlPipeline {

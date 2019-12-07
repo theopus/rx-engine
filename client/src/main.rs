@@ -141,7 +141,7 @@ fn main() {
 
             let mut rng = rx_engine::rand::thread_rng();
 
-            for i in 0..5 {
+            for i in 0..10 {
 //                w.create_entity()
 //                    .with(Transformation {
 //                        mtx: glm::identity()

@@ -66,3 +66,7 @@ impl OpenGlSampler {
 
 
 pub struct OpenGlImageView;
+
+impl OpenGlImageView {
+
+}
