@@ -9,6 +9,7 @@ use backend_api::{
 };
 
 use crate::Backend;
+use crate::image::OpenGlImage;
 
 #[derive(Clone)]
 pub struct OpenGLRendererDevice {
@@ -90,13 +91,28 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
         };
     }
 
+    fn create_render_pass<A>(&self, attachments: A)
+                             -> <Backend as api::Backend>::RenderPass
+        where
+            A: IntoIterator<Item=api::Attachment> {
+        unimplemented!()
+    }
+
     fn create_swapchain(&self, surface: &<Backend as api::Backend>::Surface)
                         -> (<Backend as api::Backend>::Swapchain, Vec<<Backend as api::Backend>::Image>) {
         (crate::swapchain::OpenGlSwapchain::new(surface), Vec::new())
     }
 
-    fn create_image(kind: api::image::Kind) -> <Backend as api::Backend>::Image {
+    fn create_image(&self, kind: api::image::Kind) -> <Backend as api::Backend>::Image {
+        unsafe { OpenGlImage::new(&self.gl_api, kind) }
+    }
+
+    fn create_image_view(&self, image: &<Backend as api::Backend>::Image) -> <Backend as api::Backend>::ImageView {
         unimplemented!()
+    }
+
+    fn bind_image_memory(&self, mem: &mut <Backend as api::Backend>::Memory, img: &<Backend as api::Backend>::Image, kind: api::image::Kind) {
+        mem.bind_image(img)
     }
 }
 

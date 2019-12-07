@@ -206,22 +206,62 @@ pub trait PlatformManager<B: Backend> {
 
 pub trait RendererDevice<B: Backend> {
     //mem
-    fn allocate_memory(&self, size: u32) -> B::Memory;
-    fn map_memory(&self, memory: &B::Memory) -> *mut u8;
-    fn flush_memory(&self, memory: &B::Memory);
-    fn unmap_memory(&self, memory: &B::Memory);
-    fn bind_buffer_memory(&self, memory: &mut B::Memory, buffer: &B::Buffer);
-    //buffer
-    fn create_buffer(&self, desc: BufferDescriptor) -> B::Buffer;
-    fn create_pipeline(&self, desc: PipelineDescriptor<B>) -> B::Pipeline;
-    //make pooled
-    fn create_cmd_buffer(&self) -> B::CommandBuffer;
-    //make pooled
-    fn allocate_descriptor_set(&self, desc: &B::DescriptorSetLayout) -> B::DescriptorSet;
-    fn execute(&self, cmd: B::CommandBuffer);
+    fn allocate_memory(
+        &self,
+        size: u32,
+    ) -> B::Memory;
 
-    fn create_shader_mod(&self, desc: ShaderModDescriptor) -> B::ShaderMod;
-    fn create_descriptor_set_layout(&self, bindings: &[DescriptorSetLayoutBinding]) -> B::DescriptorSetLayout;
+    fn map_memory(
+        &self,
+        memory: &B::Memory,
+    ) -> *mut u8;
+    fn flush_memory(&self,
+                    memory: &B::Memory,
+    );
+
+    fn unmap_memory(
+        &self,
+        memory: &B::Memory,
+    );
+
+    fn bind_buffer_memory(
+        &self,
+        memory: &mut B::Memory,
+        buffer: &B::Buffer,
+    );
+    //buffer
+    fn create_buffer(
+        &self,
+        desc: BufferDescriptor,
+    ) -> B::Buffer;
+    fn create_pipeline(
+        &self,
+        desc: PipelineDescriptor<B>,
+    ) -> B::Pipeline;
+    //make pooled
+    fn create_cmd_buffer(
+        &self
+    ) -> B::CommandBuffer;
+    //make pooled
+    fn allocate_descriptor_set(
+        &self,
+        desc: &B::DescriptorSetLayout,
+    ) -> B::DescriptorSet;
+
+    fn execute(
+        &self,
+        cmd: B::CommandBuffer,
+    );
+
+    fn create_shader_mod(
+        &self,
+        desc: ShaderModDescriptor,
+    ) -> B::ShaderMod;
+
+    fn create_descriptor_set_layout(
+        &self,
+        bindings: &[DescriptorSetLayoutBinding],
+    ) -> B::DescriptorSetLayout;
 
     fn create_pipeline_layout<I>(
         &self,
@@ -232,7 +272,10 @@ pub trait RendererDevice<B: Backend> {
             I: IntoIterator<Item=PipelineLayoutHint>;
 
 
-    fn write_descriptor_set(&self, desc_set_write: DescriptorSetWrite<B>);
+    fn write_descriptor_set(
+        &self,
+        desc_set_write: DescriptorSetWrite<B>
+    );
 
     fn create_render_pass<A>(
         &self,
@@ -262,7 +305,7 @@ pub trait RendererDevice<B: Backend> {
 
     fn bind_image_memory(
         &self,
-        mem: &B::Memory,
+        mem: &mut B::Memory,
         img: &B::Image,
         kind: image::Kind,
     );
@@ -272,7 +315,7 @@ pub mod image {
     pub type Size = u32;
     pub type Level = u16;
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub enum Kind {
         D1(Size, Level),
         D2(Size, Size, Level),

@@ -3,7 +3,7 @@ use std::os::raw::c_void;
 use api::image;
 use gl::Gl;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OpenGlImage {
     id: u32,
     kind: image::Kind,

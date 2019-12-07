@@ -20,7 +20,9 @@ impl OpenGlMemory {
         OpenGlMemory { capacity, kind: Kind::Unbinded(false), storage: None }
     }
 
-    pub fn bind_image(image: &OpenGlImage) {}
+    pub fn bind_image(&mut self, image: &OpenGlImage) {
+        self.kind = Kind::Texture(image.clone())
+    }
 
     pub fn bind_buffer(&mut self, buffer: &OpenGlBuffer) {
         self.kind = Kind::Buffer(buffer.clone());
