@@ -138,6 +138,33 @@ impl Renderer {
                 }
             ]);
 
+        let render_pass = {
+            let color_attachment = api::Attachment {
+                layout: api::AttachmentLayout::Color
+            };
+
+            let depth_attachment = api::Attachment {
+                layout: api::AttachmentLayout::Color
+            };
+
+            device.create_render_pass(vec![color_attachment, depth_attachment])
+        };
+
+
+        let (rimg_mem, rimg, rimg_view) = {
+            let kind = api::image::Kind::D2(600, 400, 1);
+            let rimg = device.create_image(kind);
+//            let req = device.get_img_requirements(img); //TODO
+//            let rimg_mem = device.allocate_memory(req.size);
+            let mut rimg_mem = device.allocate_memory(1024);
+            device.bind_image_memory(&mut rimg_mem, &rimg);
+            let rimg_view = device.create_image_view(&rimg);
+            (rimg_mem, rimg, rimg_view)
+        };
+        let vec = vec![&rimg_view];
+
+        let rimg_framebuffer = device.create_framebuffer(&render_pass, vec);
+
         let pipeline = {
             use std::mem::size_of;
             use std::fs;

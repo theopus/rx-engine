@@ -7,11 +7,11 @@ use std::os::raw::c_char;
 
 use itertools::Itertools;
 
-use gl::Gl;
 use api::AttributeDescriptor;
 use api::PipelineDescriptor;
 use api::Primitive;
 use api::VertexBufferDescriptor;
+use gl::Gl;
 
 use crate::Backend;
 use crate::buffer_v2::OpenGlBuffer;
@@ -27,6 +27,13 @@ type UboIndex = u32;
 #[derive(Debug, Clone)]
 pub struct OpenGlRenderPass {
 
+}
+
+impl OpenGlRenderPass {
+    pub fn new<A>(attachments: A) -> Self
+        where A: IntoIterator<Item=api::Attachment> {
+        OpenGlRenderPass {}
+    }
 }
 
 

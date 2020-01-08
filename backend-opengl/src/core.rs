@@ -9,7 +9,8 @@ use backend_api::{
 };
 
 use crate::Backend;
-use crate::image::OpenGlImage;
+use crate::Backend as MyBackend;
+use crate::image::{OpenGlImage, OpenGlImageView};
 
 #[derive(Clone)]
 pub struct OpenGLRendererDevice {
@@ -91,15 +92,29 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
         };
     }
 
-    fn create_render_pass<A>(&self, attachments: A)
-                             -> <Backend as api::Backend>::RenderPass
+    fn create_render_pass<A>(
+        &self, attachments: A,
+    ) -> <Backend as api::Backend>::RenderPass
         where
             A: IntoIterator<Item=api::Attachment> {
+        crate::pipeline::OpenGlRenderPass::new(attachments)
+    }
+
+    fn create_framebuffer<I>(
+        &self,
+        render_pass: &<Backend as api::Backend>::RenderPass,
+        attachments: I,
+    ) -> <Backend as api::Backend>::RenderPass
+        where
+            I: IntoIterator,
+            I::Item: Borrow<<Backend as api::Backend>::ImageView> {
         unimplemented!()
     }
 
-    fn create_swapchain(&self, surface: &<Backend as api::Backend>::Surface)
-                        -> (<Backend as api::Backend>::Swapchain, Vec<<Backend as api::Backend>::Image>) {
+    fn create_swapchain(
+        &self,
+        surface: &<Backend as api::Backend>::Surface,
+    ) -> (<Backend as api::Backend>::Swapchain, Vec<<Backend as api::Backend>::Image>) {
         (crate::swapchain::OpenGlSwapchain::new(surface), Vec::new())
     }
 
@@ -111,7 +126,11 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
         unimplemented!()
     }
 
-    fn bind_image_memory(&self, mem: &mut <Backend as api::Backend>::Memory, img: &<Backend as api::Backend>::Image, kind: api::image::Kind) {
+    fn bind_image_memory(
+        &self, mem:
+        &mut <Backend as api::Backend>::Memory,
+        img: &<Backend as api::Backend>::Image
+    ) {
         mem.bind_image(img)
     }
 }

@@ -279,10 +279,19 @@ pub trait RendererDevice<B: Backend> {
 
     fn create_render_pass<A>(
         &self,
-        attachments: A,
+        attachments: A,// color, depth, stencil attachments, etc.
     ) -> B::RenderPass
         where
             A: IntoIterator<Item=Attachment>;
+
+    fn create_framebuffer<A>(
+        &self,
+        render_pass: &B::RenderPass,
+        attachments: A,// color, depth, stencil attachments, etc.
+    ) -> B::RenderPass
+        where
+            A: IntoIterator,
+            A::Item: Borrow<B::ImageView>;
 
     fn create_swapchain(
         &self,
@@ -306,8 +315,7 @@ pub trait RendererDevice<B: Backend> {
     fn bind_image_memory(
         &self,
         mem: &mut B::Memory,
-        img: &B::Image,
-        kind: image::Kind,
+        img: &B::Image
     );
 }
 
@@ -328,7 +336,15 @@ pub trait Swapchain<B: Backend> {
     fn present(&mut self, frame_index: u32);
 }
 
-pub struct Attachment {}
+pub struct Attachment {
+    pub layout: AttachmentLayout
+}
+
+pub enum AttachmentLayout {
+    Color,
+    Depth,
+    Stencil,
+}
 
 pub trait CommandBuffer<B: Backend> {
     fn prepare_pipeline(&mut self, pipeline: &B::Pipeline);
