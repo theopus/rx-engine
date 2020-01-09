@@ -48,7 +48,7 @@ impl backend_api::Backend for Backend {
     type Memory = memory::OpenGlMemory;
     type Buffer = buffer_v2::OpenGlBuffer;
     type Image = image::OpenGlImage;
-    type ImageView = image::OpenGlImageView;
+    type ImageView = image::OpenGlImage;
     type Sampler = image::OpenGlSampler;
     type Pipeline = pipeline::OpenGlPipeline;
     type RenderPass = pipeline::OpenGlRenderPass;

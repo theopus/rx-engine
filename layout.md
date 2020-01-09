@@ -61,7 +61,7 @@ let pipeline = device.create_pipeline(PipelineDesc {
 })
 
 cmd_buffer.viewport(dimensions)
-cmd_buffer.prepare_pipeline(pipeline)
+cmd_buffer.bind_pipeline(pipeline)
 cmd_buffer.bind_vertex_buffer(0, vb)
 cmd_buffer.bind_index_buffer(ib)
 

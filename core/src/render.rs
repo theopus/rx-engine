@@ -144,7 +144,7 @@ impl Renderer {
             };
 
             let depth_attachment = api::Attachment {
-                layout: api::AttachmentLayout::Color
+                layout: api::AttachmentLayout::Depth
             };
 
             device.create_render_pass(vec![color_attachment, depth_attachment])
@@ -161,9 +161,18 @@ impl Renderer {
             let rimg_view = device.create_image_view(&rimg);
             (rimg_mem, rimg, rimg_view)
         };
-        let vec = vec![&rimg_view];
 
-        let rimg_framebuffer = device.create_framebuffer(&render_pass, vec);
+
+        let (drimg_mem, drimg, drimg_view) = {
+            let kind = api::image::Kind::D2(600, 400, 1);
+            let rimg = device.create_image(kind);
+            let mut rimg_mem = device.allocate_memory(1024);
+            device.bind_image_memory(&mut rimg_mem, &rimg);
+            let rimg_view = device.create_image_view(&rimg);
+            (rimg_mem, rimg, rimg_view)
+        };
+
+        let rimg_framebuffer = device.create_framebuffer(&render_pass, vec![&rimg_view, &drimg_view]);
 
         let pipeline = {
             use std::mem::size_of;
@@ -301,8 +310,9 @@ impl Renderer {
         let mut cmd_buffer = device.create_cmd_buffer();
         let u_ptr = device.map_memory(&self.uniform_mem);
 
+        cmd_buffer.bind_pipeline(&self.pipeline);
+//        cmd_buffer.begin_render_pass();
         cmd_buffer.clear_screen((0.5, 0.5, 0.5, 1.));
-        cmd_buffer.prepare_pipeline(&self.pipeline);
         cmd_buffer.bind_descriptor_set(&self.pipeline_layout, &self.desc_set);
 
         cmd_buffer.bind_vertex_buffer(0, &self.vertex);

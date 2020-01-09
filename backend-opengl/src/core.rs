@@ -104,11 +104,11 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
         &self,
         render_pass: &<Backend as api::Backend>::RenderPass,
         attachments: I,
-    ) -> <Backend as api::Backend>::RenderPass
+    ) -> <Backend as api::Backend>::Framebuffer
         where
             I: IntoIterator,
             I::Item: Borrow<<Backend as api::Backend>::ImageView> {
-        unimplemented!()
+        unsafe { crate::framebuffer::OpenGlFramebuffer::new(&self.gl_api, render_pass, attachments) }
     }
 
     fn create_swapchain(
@@ -123,7 +123,7 @@ impl RendererDevice<Backend> for OpenGLRendererDevice {
     }
 
     fn create_image_view(&self, image: &<Backend as api::Backend>::Image) -> <Backend as api::Backend>::ImageView {
-        unimplemented!()
+        image.clone()
     }
 
     fn bind_image_memory(

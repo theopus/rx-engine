@@ -16,6 +16,7 @@ use gl::Gl;
 use crate::Backend;
 use crate::buffer_v2::OpenGlBuffer;
 use crate::pipeline::OpenGlCommand::{BindDescriptorSet, BindIndexBuffer, BindVertexBuffer, ClearScreen, DrawIndexed, DrawIndexedInstanced, PreparePipeline};
+use crate::framebuffer::OpenGlFramebuffer;
 
 type GlPrimitive = gl::types::GLenum;
 type VaoId = gl::types::GLuint;
@@ -24,15 +25,22 @@ type ProgramId = gl::types::GLuint;
 type Binding = u32;
 type UboIndex = u32;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct OpenGlRenderPass {
-
+    pub(crate) attachments: Vec<api::Attachment>
 }
 
 impl OpenGlRenderPass {
     pub fn new<A>(attachments: A) -> Self
         where A: IntoIterator<Item=api::Attachment> {
-        OpenGlRenderPass {}
+        let mut att = Vec::new();
+        for a in attachments {
+            att.push(a);
+        }
+
+        OpenGlRenderPass {
+            attachments: att
+        }
     }
 }
 
@@ -404,8 +412,16 @@ impl OpenGlCommandBuffer {
 }
 
 impl api::CommandBuffer<Backend> for OpenGlCommandBuffer {
-    fn prepare_pipeline(&mut self, pipeline: &<Backend as api::Backend>::Pipeline) {
+    fn bind_pipeline(&mut self, pipeline: &<Backend as api::Backend>::Pipeline) {
         self.cmds.push(PreparePipeline(pipeline.clone()));
+    }
+
+    fn bind_render_pass(
+        &self,
+        render_pass: &OpenGlRenderPass,
+        framebuffer: &OpenGlFramebuffer,
+    ) {
+//        unimplemented!()
     }
 
     fn bind_vertex_buffer(&mut self, binding: u32, buffer: &<Backend as api::Backend>::Buffer) {

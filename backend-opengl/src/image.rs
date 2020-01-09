@@ -5,7 +5,7 @@ use gl::Gl;
 
 #[derive(Debug, Clone)]
 pub struct OpenGlImage {
-    id: u32,
+    pub(crate)id: u32,
     kind: image::Kind,
 }
 

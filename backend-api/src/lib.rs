@@ -288,7 +288,7 @@ pub trait RendererDevice<B: Backend> {
         &self,
         render_pass: &B::RenderPass,
         attachments: A,// color, depth, stencil attachments, etc.
-    ) -> B::RenderPass
+    ) -> B::Framebuffer
         where
             A: IntoIterator,
             A::Item: Borrow<B::ImageView>;
@@ -336,10 +336,13 @@ pub trait Swapchain<B: Backend> {
     fn present(&mut self, frame_index: u32);
 }
 
+
+#[derive(Debug)]
 pub struct Attachment {
     pub layout: AttachmentLayout
 }
 
+#[derive(Debug)]
 pub enum AttachmentLayout {
     Color,
     Depth,
@@ -347,7 +350,8 @@ pub enum AttachmentLayout {
 }
 
 pub trait CommandBuffer<B: Backend> {
-    fn prepare_pipeline(&mut self, pipeline: &B::Pipeline);
+    fn bind_pipeline(&mut self, pipeline: &B::Pipeline);
+    fn bind_render_pass(&self, render_pass: &B::RenderPass, framebuffer: &B::Framebuffer);
     fn bind_vertex_buffer(&mut self, binding: u32, buffer: &B::Buffer);
     fn bind_index_buffer(&mut self, buffer: &B::Buffer);
     fn buffer_data(&mut self, buffer: &B::Buffer, data: &[u8]);
